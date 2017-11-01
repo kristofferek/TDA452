@@ -18,7 +18,6 @@ prop_power1 n k = power1 n k' == n^k'
 -- Part 3
 power2 :: Integer -> Integer -> Integer
 power2 n k | k == 0            = 1
-           | k == 1            = n
            | k `mod` 2 == 0    = power2 (n*n) (k `div` 2)
            | k `mod` 2 == 1    = n * (power2 n (k-1))
 
@@ -27,7 +26,6 @@ prop_power2 n k = power2 n k' == n^k'
   where k' = abs k
 
 -- Part 4
-
 prop_power :: Integer -> Integer -> Bool
 prop_power n k = (power1 n k' == power2 n k') && (power1 n k' == n^k')
   where k' = abs k
