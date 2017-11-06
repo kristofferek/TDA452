@@ -29,12 +29,23 @@ Lastly, 1+1+0=2 will be returned from the initial call
 empty :: Hand
 empty = Empty
 
+-- Returns the total amount of Aces in a hand
+nbrOfAces :: Hand -> Integer
+nbrOfAces Empty = 0
+nbrOfAces (Add (Card r _) h) | r == Ace = 1 + nbrOfAces h
+nbrOfAces (Add c h) = nbrOfAces h
+
 -- Returns the total value of a hand
 value :: Hand -> Integer
-value Empty = 0
-value (Add (Card (Numeric i) _) h) = i + value h
-value (Add (Card r _) h) | r == Ace = 11 + value h
-value (Add _ h) = 10 + value h
+value h = if value' h <= 21
+  then value' h
+  else value' h - (10*nbrOfAces h)
+  where
+    value' Empty = 0
+    value' (Add (Card (Numeric i) _) h) = i + value h
+    value' (Add (Card r _) h) | r == Ace = 11 + value h
+    value' (Add _ h) = 10 + value h
+
 
 -- Example hand
 card1 = Card (Numeric 3) Spades
