@@ -33,19 +33,31 @@ empty = Empty
 nbrOfAces :: Hand -> Integer
 nbrOfAces Empty = 0
 nbrOfAces (Add (Card r _) h) | r == Ace = 1 + nbrOfAces h
-nbrOfAces (Add c h) = nbrOfAces h
+nbrOfAces (Add c h)                     = nbrOfAces h
 
 -- Returns the total value of a hand
 value :: Hand -> Integer
-value h = if value' h <= 21
+value h = if value' h <= 21 && nbrOfAces h > 0
   then value' h
-  else value' h - (10*nbrOfAces h)
+  else value' h - 10*nbrOfAces h
   where
     value' Empty = 0
-    value' (Add (Card (Numeric i) _) h) = i + value h
-    value' (Add (Card r _) h) | r == Ace = 11 + value h
-    value' (Add _ h) = 10 + value h
+    value' (Add (Card (Numeric i) _) h)  = i + value h -- 2-10
+    value' (Add (Card r _) h) | r == Ace = 11 + value h -- Ace
+    value' (Add _ h)                     = 10 + value h -- Jack | Queen | King
 
+-- Given a hand, is the player bust?
+gameOver :: Hand -> Bool
+gameOver h = value h > 21
+
+-- Which player is the winner? Bank or Guest?
+-- Guest is the first parameter
+winner :: Hand -> Hand -> Player
+winner Empty _ = Bank
+winner _ Empty = Guest
+winner g b = if value g > value b
+  then Guest
+  else Bank
 
 -- Example hand
 card1 = Card (Numeric 3) Spades
