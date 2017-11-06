@@ -16,7 +16,13 @@ Step 1) size will match the hand with the followin pattern "(Add card hand)",
 
 Step 2) size will, as of now, return "1 + size hand"
         hand is not empty so pattern "(Add card hand)" will match.
-        card = (Card Jack)
+        card = (Card Jack Spades)
+        hand = Empty
+
+Step 3) Now the return will be "1 + 1 + size hand".
+        And since hand = Empty, 0 will be returned.
+
+Lastly, 1+1+0=2 will be returned from the initial call
 -}
 
 -- Returns an empty hand
