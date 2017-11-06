@@ -53,8 +53,6 @@ gameOver h = value h > 21
 -- Which player is the winner? Bank or Guest?
 -- Guest is the first parameter
 winner :: Hand -> Hand -> Player
-winner Empty _ = Bank
-winner _ Empty = Guest
 winner g b = if value g > value b
   then Guest
   else Bank
