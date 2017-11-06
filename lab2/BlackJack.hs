@@ -25,6 +25,8 @@ Step 3) Now the return will be "1 + 1 + size hand".
 Lastly, 1+1+0=2 will be returned from the initial call
 -}
 
+-- Task 3.4
+
 -- Returns an empty hand
 empty :: Hand
 empty = Empty
@@ -35,6 +37,12 @@ nbrOfAces Empty = 0
 nbrOfAces (Add (Card r _) h) | r == Ace = 1 + nbrOfAces h
 nbrOfAces (Add c h)                     = nbrOfAces h
 
+-- Returns the value of a rank
+valueRank :: Rank -> Integer
+valueRank (Numeric i)           = i
+valueRank r | r == Ace          = 11
+valueRank _                     = 10
+
 -- Returns the total value of a hand
 value :: Hand -> Integer
 value h = if value' h <= 21 && nbrOfAces h > 0
@@ -42,9 +50,7 @@ value h = if value' h <= 21 && nbrOfAces h > 0
   else value' h - 10*nbrOfAces h
   where
     value' Empty = 0
-    value' (Add (Card (Numeric i) _) h)  = i + value' h -- 2-10
-    value' (Add (Card r _) h) | r == Ace = 11 + value' h -- Ace
-    value' (Add _ h)                     = 10 + value' h -- Jack | Queen | King
+    value' (Add (Card r _) h)  = valueRank r + value' h
 
 -- Given a hand, is the player bust?
 gameOver :: Hand -> Bool
@@ -60,4 +66,4 @@ winner g b = if value g > value b
 -- Example hand
 card1 = Card (Numeric 3) Spades
 card2 = Card Ace Hearts
-hand = Add card2 (Add card1 (Add card1 Empty))
+hand = Add card2 (Add card1 (Add card2 Empty))
