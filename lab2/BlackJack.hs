@@ -42,9 +42,9 @@ value h = if value' h <= 21 && nbrOfAces h > 0
   else value' h - 10*nbrOfAces h
   where
     value' Empty = 0
-    value' (Add (Card (Numeric i) _) h)  = i + value h -- 2-10
-    value' (Add (Card r _) h) | r == Ace = 11 + value h -- Ace
-    value' (Add _ h)                     = 10 + value h -- Jack | Queen | King
+    value' (Add (Card (Numeric i) _) h)  = i + value' h -- 2-10
+    value' (Add (Card r _) h) | r == Ace = 11 + value' h -- Ace
+    value' (Add _ h)                     = 10 + value' h -- Jack | Queen | King
 
 -- Given a hand, is the player bust?
 gameOver :: Hand -> Bool
@@ -60,4 +60,4 @@ winner g b = if value g > value b
 -- Example hand
 card1 = Card (Numeric 3) Spades
 card2 = Card Ace Hearts
-hand = Add card2 (Add card1 (Add card2 Empty))
+hand = Add card2 (Add card1 (Add card1 Empty))
