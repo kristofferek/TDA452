@@ -2,11 +2,14 @@ module BlackJack where
 import Cards
 import RunGame
 
-{-                    Task 3.1
+{-                    TASK 3.1
+
   We have read the document carefully
 -}
 
-{-                    Task 3.2
+
+{-                    TASK 3.2
+
 size hand2
   = size (Add (Card (Numeric 2) Hearts)(Add (Card Jack Spades) Empty))
   = 1 + size (Add (Card Jack Spades) Empty)
@@ -14,7 +17,8 @@ size hand2
   = 1 + 1 + 0
   = 2
 
-Step 1) size will match the above statement with the following pattern "(Add card hand)",
+Step 1) size will match the above statement with the
+        following pattern "(Add card hand)",
         where card in this case = "(Card (Numeric 2) Hearts))"
         and hand = (Add (Card Jack Spades) Empty)
 
@@ -29,7 +33,9 @@ Step 3) Now the return will be "1 + 1 + size hand".
 Lastly, 1+1+0=2 will be returned from the initial call
 -}
 
---                      Task 3.4
+
+--                      TASK 3.4
+
 
 -- Returns an empty hand
 empty :: Hand
