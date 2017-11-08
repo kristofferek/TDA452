@@ -2,15 +2,19 @@ module BlackJack where
 import Cards
 import RunGame
 
-{- Task 3.1
+{-                    Task 3.1
   We have read the document carefully
 -}
 
-{- Task 3.2
-size (Add (Card (Numeric 2) Hearts)
-        (Add (Card Jack Spades) Empty))
+{-                    Task 3.2
+size hand2
+  = size (Add (Card (Numeric 2) Hearts)(Add (Card Jack Spades) Empty))
+  = 1 + size (Add (Card Jack Spades) Empty)
+  = 1 + 1 + size Empty
+  = 1 + 1 + 0
+  = 2
 
-Step 1) size will match the hand with the followin pattern "(Add card hand)",
+Step 1) size will match the above statement with the following pattern "(Add card hand)",
         where card in this case = "(Card (Numeric 2) Hearts))"
         and hand = (Add (Card Jack Spades) Empty)
 
@@ -25,7 +29,7 @@ Step 3) Now the return will be "1 + 1 + size hand".
 Lastly, 1+1+0=2 will be returned from the initial call
 -}
 
--- Task 3.4
+--                      Task 3.4
 
 -- Returns an empty hand
 empty :: Hand
@@ -47,7 +51,7 @@ valueRank _                     = 10
 value :: Hand -> Integer
 value h = if value' h <= 21 && nbrOfAces h > 0
   then value' h
-  else value' h - 10*nbrOfAces h
+  else value' h - 10*nbrOfAces h --Reduces the value of ace
   where
     value' Empty = 0
     value' (Add (Card r _) h)  = valueRank r + value' h
@@ -63,7 +67,9 @@ winner g b = if value g > value b
   then Guest
   else Bank
 
--- Example hand
+-- Example hands
 card1 = Card (Numeric 3) Spades
 card2 = Card Ace Hearts
-hand = Add card2 (Add card1 (Add card2 Empty))
+card3 = Card Queen Clubs
+hand1 = Add card2 (Add card2 (Add card1 Empty)) -- Should have value 5
+hand2 = Add card3 (Add card1 (Add card3 Empty)) -- Should have value 23
