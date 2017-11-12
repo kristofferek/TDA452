@@ -44,38 +44,39 @@ empty = Empty
 -- Returns the total amount of Aces in a hand
 nbrOfAces :: Hand -> Integer
 nbrOfAces Empty = 0
-nbrOfAces (Add (Card r _) h) | r == Ace = 1 + nbrOfAces h
-nbrOfAces (Add c h)                     = nbrOfAces h
+nbrOfAces (Add (Card Ace _) h) = 1 + nbrOfAces h
+nbrOfAces (Add c h)            = nbrOfAces h
 
 -- Returns the value of a rank
 valueRank :: Rank -> Integer
-valueRank (Numeric i)           = i
-valueRank r | r == Ace          = 11
-valueRank _                     = 10
+valueRank (Numeric i)  = i
+valueRank Ace          = 11
+valueRank _            = 10
 
 -- Returns the total value of a hand
 value :: Hand -> Integer
-value h = if value' h <= 21 && nbrOfAces h > 0
-  then value' h
-  else value' h - 10*nbrOfAces h --Reduces the value of ace
+value h
+  | value' h <= 21 = value' h
+  | otherwise      = value' h - 10 * nbrOfAces h
   where
     value' Empty = 0
     value' (Add (Card r _) h)  = valueRank r + value' h
 
 -- Given a hand, is the player bust?
 gameOver :: Hand -> Bool
-gameOver h = value h > 21
+gameOver = (> 21) . value
 
 -- Which player is the winner? Bank or Guest?
 -- Guest is the first parameter
-winner :: Hand -> Hand -> Player
-winner g b = if value g > value b
-  then Guest
-  else Bank
+winner g b
+  | gameOver g               = Bank
+  | gameOver b               = Guest
+  | value g > value b        = Guest
+  | otherwise                = Bank
 
 -- Example hands
 card1 = Card (Numeric 3) Spades
 card2 = Card Ace Hearts
 card3 = Card Queen Clubs
 hand1 = Add card2 (Add card2 (Add card1 Empty)) -- Should have value 5
-hand2 = Add card3 (Add card1 (Add card3 Empty)) -- Should have value 23
+hand2 = Add card3 (Add card1 (Add card1 Empty)) -- Should have value 16
