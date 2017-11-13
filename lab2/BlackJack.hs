@@ -1,6 +1,8 @@
 module BlackJack where
 import Cards
 import RunGame
+import Test.QuickCheck hiding (shuffle)
+import System.Random
 
 {-                    TASK 3.1
 
@@ -34,7 +36,7 @@ Lastly, 1+1+0=2 will be returned from the initial call
 -}
 
 
---                      TASK 3.4
+--                      PART A - Functions
 
 
 -- Returns an empty hand
@@ -73,6 +75,34 @@ winner g b
   | gameOver b               = Guest
   | value g > value b        = Guest
   | otherwise                = Bank
+
+
+
+
+--                  PART B
+
+(<+) :: Hand -> Hand -> Hand
+(<+) (Add c1 h1) h2
+  | h1 == Empty   = (Add c1 h2)
+  | otherwise     = (Add c1 (h1<+h2))
+
+prop_onTopOf_assoc :: Hand -> Hand -> Hand -> Bool
+prop_onTopOf_assoc p1 p2 p3 = p1<+(p2<+p3) == (p1<+p2)<+p3
+
+--prop_size_onTopOf :: Hand -> Hand -> Bool
+
+--fullDeck :: Hand
+
+--draw :: Hand -> Hand -> (Hand,Hand)
+--error "draw: The deck is empty."
+
+--first :: (a, b) -> a
+--first (x,y) = x
+
+--playBank :: Hand -> Hand
+--shuffle :: StdGen -> Hand -> Hand
+
+
 
 -- Example hands
 card1 = Card (Numeric 3) Spades
