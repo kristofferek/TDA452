@@ -82,9 +82,8 @@ winner g b
 --                  PART B
 
 (<+) :: Hand -> Hand -> Hand
-(<+) (Add c1 h1) h2
-  | h1 == Empty   = (Add c1 h2)
-  | otherwise     = (Add c1 (h1<+h2))
+(<+) (Add c1 Empty) h2 = (Add c1 h2)
+(<+) (Add c1 h1) h2 = (Add c1 (h1<+h2))
 
 prop_onTopOf_assoc :: Hand -> Hand -> Hand -> Bool
 prop_onTopOf_assoc p1 p2 p3 = p1<+(p2<+p3) == (p1<+p2)<+p3
