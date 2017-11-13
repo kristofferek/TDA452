@@ -14,6 +14,7 @@ data Interface = Interface
   , iDraw     :: Hand -> Hand -> (Hand, Hand)
   , iPlayBank :: Hand -> Hand
   , iShuffle  :: StdGen -> Hand -> Hand
+  , iPrintHand :: Hand -> IO ()
   }
 
 -- | A type of players.
@@ -30,7 +31,7 @@ runGame i =
 -- | Play until the guest player is bust or chooses to stop.
 gameLoop :: Interface -> Hand -> Hand -> IO ()
 gameLoop i deck guest =
-  do putStrLn ("Your current score: " ++ show (iValue i guest))
+  do putStrLn ("Your current score: " ++ show (iValue i guest)); iPrintHand i guest
      if iGameOver i guest
        then finish i deck guest
        else do putStrLn "Draw another card? [y]"

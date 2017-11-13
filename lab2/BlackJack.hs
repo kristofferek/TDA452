@@ -4,6 +4,21 @@ import RunGame
 import Test.QuickCheck hiding (shuffle)
 import System.Random
 
+implementation = Interface
+  { iEmpty    = empty
+  , iFullDeck = fullDeck
+  , iValue    = value
+  , iGameOver = gameOver
+  , iWinner   = winner
+  , iDraw     = draw
+  , iPlayBank = playBank
+  , iShuffle  = shuffle
+  , iPrintHand = printHand
+  }
+
+main :: IO ()
+main = runGame implementation
+
 {-                    TASK 3.1
 
   We have read the document carefully
@@ -82,8 +97,9 @@ winner g b
 --                  PART B
 
 (<+) :: Hand -> Hand -> Hand
-(<+) (Add c1 Empty) h2 = (Add c1 h2)
-(<+) (Add c1 h1)    h2 = (Add c1 (h1<+h2))
+(<+) Empty h2          = h2
+(<+) (Add c1 Empty) h2 = Add c1 h2
+(<+) (Add c1 h1)    h2 = Add c1 (h1<+h2)
 
 prop_onTopOf_assoc :: Hand -> Hand -> Hand -> Bool
 prop_onTopOf_assoc p1 p2 p3 = p1<+(p2<+p3) == (p1<+p2)<+p3
@@ -110,13 +126,47 @@ draw :: Hand -> Hand -> (Hand,Hand)
 draw Empty hand = error "draw: The deck is empty."
 draw (Add c h) hand = ( h, Add c hand )
 
---first :: (a, b) -> a
---first (x,y) = x
+playBank :: Hand -> Hand
+playBank deck = playBank' deck Empty
+  where
+    playBank' deck bankHand
+      | value bankHand >= 16 = bankHand
+      | otherwise            = playBank' deck' bankHand'
+        where
+          (deck',bankHand') = draw deck bankHand
 
---playBank :: Hand -> Hand
---shuffle :: StdGen -> Hand -> Hand
+shuffle :: StdGen -> Hand -> Hand
+shuffle g Empty = Empty
+shuffle g deck = Add rc (shuffle g' rdeck)
+  where
+    (n, g') = randomR (0, size deck-1) g
+    (rc, rdeck) = drawNthCard deck n
 
+drawNthCard :: Hand -> Integer -> (Card, Hand)
+drawNthCard deck n = drawNthCard' Empty deck n 0
+  where
+    drawNthCard' before (Add c after) n i
+      | n == i    = (c, (before<+after))
+      | otherwise = drawNthCard' (Add c before) after n (i+1)
 
+prop_shuffle_sameCards :: StdGen -> Card -> Hand -> Bool
+prop_shuffle_sameCards g c h =
+    c `belongsTo` h == c `belongsTo` shuffle g h
+
+belongsTo :: Card -> Hand -> Bool
+c `belongsTo` Empty = False
+c `belongsTo` (Add c' h) = c == c' || c `belongsTo` h
+
+prop_size_shuffle :: StdGen -> Hand -> Bool
+prop_size_shuffle g hand = size hand == size (shuffle g hand)
+
+printHand :: Hand -> IO ()
+printHand hand = putStr $ unlines (printHand' hand)
+  where
+    printHand' :: Hand -> [String]
+    printHand' Empty            = []
+    printHand' (Add card Empty) = [show card]
+    printHand' (Add card hand)  = show card:printHand' hand
 
 -- Example hands
 card1 = Card (Numeric 3) Spades
