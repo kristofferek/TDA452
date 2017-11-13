@@ -89,9 +89,23 @@ winner g b
 prop_onTopOf_assoc :: Hand -> Hand -> Hand -> Bool
 prop_onTopOf_assoc p1 p2 p3 = p1<+(p2<+p3) == (p1<+p2)<+p3
 
---prop_size_onTopOf :: Hand -> Hand -> Bool
+prop_size_onTopOf :: Hand -> Hand -> Bool
+prop_size_onTopOf h1 h2 = (size (h1<+h2)) == (size h1 + size h2)
 
---fullDeck :: Hand
+fullDeck :: Hand
+fullDeck = (suitDeck Hearts)<+(suitDeck Spades)
+              <+(suitDeck Diamonds)<+(suitDeck Clubs)
+
+suitDeck :: Suit -> Hand
+suitDeck s = suitDeck' s 2
+  where
+    suitDeck' s i
+      | i <= 10   = (Add (Card (Numeric i) s) (suitDeck' s (i+1)))
+      | i == 11   = (Add (Card Jack s) (suitDeck' s (i+1)))
+      | i == 12   = (Add (Card Queen s) (suitDeck' s (i+1)))
+      | i == 13   = (Add (Card King s) (suitDeck' s (i+1)))
+      | otherwise = (Add (Card Ace s) Empty)
+
 
 --draw :: Hand -> Hand -> (Hand,Hand)
 --error "draw: The deck is empty."
