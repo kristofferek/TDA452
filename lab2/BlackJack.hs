@@ -83,7 +83,7 @@ winner g b
 
 (<+) :: Hand -> Hand -> Hand
 (<+) (Add c1 Empty) h2 = (Add c1 h2)
-(<+) (Add c1 h1) h2 = (Add c1 (h1<+h2))
+(<+) (Add c1 h1)    h2 = (Add c1 (h1<+h2))
 
 prop_onTopOf_assoc :: Hand -> Hand -> Hand -> Bool
 prop_onTopOf_assoc p1 p2 p3 = p1<+(p2<+p3) == (p1<+p2)<+p3
@@ -106,8 +106,9 @@ suitDeck s = suitDeck' s 2
       | otherwise = (Add (Card Ace s) Empty)
 
 
---draw :: Hand -> Hand -> (Hand,Hand)
---error "draw: The deck is empty."
+draw :: Hand -> Hand -> (Hand,Hand)
+draw Empty hand = error "draw: The deck is empty."
+draw (Add c h) hand = ( h, Add c hand )
 
 --first :: (a, b) -> a
 --first (x,y) = x
