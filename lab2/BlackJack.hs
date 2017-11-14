@@ -110,6 +110,15 @@ draw :: Hand -> Hand -> (Hand,Hand)
 draw Empty hand = error "draw: The deck is empty."
 draw (Add c h) hand = ( h, Add c hand )
 
+playBank :: Hand -> Hand
+playBank deck = bankHand
+  where (_,bankHand) = playBank' deck Empty
+
+playBank' :: Hand -> Hand -> (Hand,Hand)
+playBank' deck bankHand = if value bankHand < 16 then playBank' deck' bankHand'
+  else (deck, bankHand)
+  where (deck',bankHand') = draw deck bankHand
+
 --first :: (a, b) -> a
 --first (x,y) = x
 
