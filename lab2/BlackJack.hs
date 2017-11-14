@@ -136,13 +136,7 @@ draw (Add c h) hand = ( h, Add c hand )
 -- Plays as the bank and returns the final hand.
 -- Draws a new card as long as the value is less than 16
 playBank :: Hand -> Hand
-playBank deck = playBank' deck Empty
-  where
-    playBank' deck bankHand
-      | value bankHand >= 16 = bankHand
-      | otherwise            = playBank' deck' bankHand'
-        where
-          (deck',bankHand') = draw deck bankHand
+
 
 -- Shuffles the order of a given deck
 shuffle :: StdGen -> Hand -> Hand
