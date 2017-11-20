@@ -54,8 +54,8 @@ printSudoku sudoku = putStrLn (concat (map oneRowToStr s))
 oneRowToStr :: [Maybe Int] -> String
 oneRowToStr [] = "\n"
 oneRowToStr (x:xs) = (maybeToStr x) ++ oneRowToStr xs
-  where maybeToStr (Just x) = show x
-        maybeToStr Nothing ="."
+  where maybeToStr (Just x) = (show x) ++ "\t"
+        maybeToStr Nothing =".\t"
 
 --readSudoku :: FilePath -> IO String
 --readSudoku f = readFile f
