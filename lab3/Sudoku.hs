@@ -1,3 +1,5 @@
+import Data.Char
+
 data Sudoku = Sudoku { rows :: [[Maybe Int]] }
 
 example :: Sudoku
@@ -52,10 +54,17 @@ printSudoku sudoku = putStrLn (concat (map oneRowToStr s))
   where s = (rows sudoku)
 
 oneRowToStr :: [Maybe Int] -> String
-oneRowToStr [] = "\n"
+oneRowToStr [] = "\n\n"
 oneRowToStr (x:xs) = (maybeToStr x) ++ oneRowToStr xs
   where maybeToStr (Just x) = (show x) ++ "\t"
         maybeToStr Nothing =".\t"
 
---readSudoku :: FilePath -> IO String
---readSudoku f = readFile f
+readSudoku :: FilePath -> IO Sudoku
+readSudoku f = do sudoku <- readFile f
+                  return (divideSudoku (lines sudoku))
+
+divideSudoku :: [[Char]] -> Sudoku
+divideSudoku s = Sudoku (map row s)
+  where row l = (map temp2 l)
+        temp2 '.' = Nothing
+        temp2 c = Just(digitToInt c)
