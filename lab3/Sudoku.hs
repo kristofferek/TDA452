@@ -26,28 +26,36 @@ allBlankSudoku = Sudoku (blankSudoku 9 9)
 -- Check if input is a legit sudoku
 
 isSudoku :: Sudoku -> Bool
-isSudoku (Sudoku s) = (all (\x -> length x == 9) s) && (length s == 9) && (all (\x -> checkAllValue x) s)
+isSudoku sudoku = (all (\x -> length x == 9) s) && (length s == 9) && (all (\x -> checkAllValue x) s)
+  where s = (rows sudoku)
 
 checkAllValue :: [Maybe Int] -> Bool
 checkAllValue list = all (\x -> checkOneValue x) list
-  where checkOneValue (Just x) = if x > 0 && x < 10 then True else False
+  where checkOneValue (Just x) = x > 0 && x < 10
         checkOneValue Nothing = True
 
 -- Check if the sudoku is filled with numbers
 
 isFilled :: Sudoku -> Bool
-isFilled (Sudoku s) = all (\x -> checkAllFilled x) s
+isFilled sudoku = all (\x -> checkAllFilled x) s
+  where s = (rows sudoku)
 
 checkAllFilled :: [Maybe Int] -> Bool
 checkAllFilled list = all (\x -> checkOneFilled x) list
   where checkOneFilled Nothing = False
         checkOneFilled _ = True
 
+-- Print the Sudoku
+
 printSudoku :: Sudoku -> IO()
-printSudoku (Sudoku s) = putStrLn (concat (map oneRowToStr s))
+printSudoku sudoku = putStrLn (concat (map oneRowToStr s))
+  where s = (rows sudoku)
 
 oneRowToStr :: [Maybe Int] -> String
 oneRowToStr [] = "\n"
 oneRowToStr (x:xs) = (maybeToStr x) ++ oneRowToStr xs
   where maybeToStr (Just x) = show x
         maybeToStr Nothing ="."
+
+--readSudoku :: FilePath -> IO String
+--readSudoku f = readFile f
