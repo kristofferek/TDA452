@@ -1,8 +1,5 @@
-<<<<<<< HEAD
 import Test.QuickCheck
-=======
 import Data.Char
->>>>>>> 038ab600afb1f070becbdfac322458429c84c3d3
 
 data Sudoku = Sudoku { rows :: [[Maybe Int]] }
 
@@ -81,3 +78,5 @@ cell = frequency [(9,return Nothing),
 
 randInt :: Gen Int
 randInt = elements [1..9]
+
+type Block = [Maybe Int]
