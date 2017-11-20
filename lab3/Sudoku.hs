@@ -1,3 +1,5 @@
+import Test.QuickCheck
+
 data Sudoku = Sudoku { rows :: [[Maybe Int]] }
 
 example :: Sudoku
@@ -59,3 +61,12 @@ oneRowToStr (x:xs) = (maybeToStr x) ++ oneRowToStr xs
 
 --readSudoku :: FilePath -> IO String
 --readSudoku f = readFile f
+
+cell :: Gen (Maybe Int)
+cell = frequency [(9,return Nothing),
+                   (1, do
+                     n <- randInt
+                     return (Just n))]
+
+randInt :: Gen Int
+randInt = elements [1..9]
