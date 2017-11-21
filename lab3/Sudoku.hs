@@ -1,5 +1,6 @@
 import Test.QuickCheck
 import Data.Char
+import Data.List
 
 data Sudoku = Sudoku { rows :: [[Maybe Int]] }
 
@@ -80,3 +81,14 @@ randInt :: Gen Int
 randInt = elements [1..9]
 
 type Block = [Maybe Int]
+
+isOkayBlock :: Block -> Bool
+isOkayBlock [] = True
+isOkayBlock (Nothing:xs) = isOkayBlock xs
+isOkayBlock (x:xs) = if (x `elem` xs) then False
+  else (isOkayBlock xs)
+
+blocks :: Sudoku -> [Block]
+blocks sudoku = s  ++ (transpose s) ++ (map cells (split 3 s))
+  where s = rows sudoku
+        cells (x:xs) = take 3 x
