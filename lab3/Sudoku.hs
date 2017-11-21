@@ -2,7 +2,7 @@ import Test.QuickCheck
 import Data.Char
 import Data.List
 
-data Sudoku = Sudoku { rows :: [[Maybe Int]] }
+data Sudoku = Sudoku { rows :: [[Maybe Int]] } deriving Show
 
 example :: Sudoku
 example = Sudoku
@@ -79,6 +79,15 @@ cell = frequency [(9,return Nothing),
 
 randInt :: Gen Int
 randInt = elements [1..9]
+
+-- | an instance for generating Arbitrary Sudokus
+instance Arbitrary Sudoku where
+  arbitrary =
+    do rows <- vectorOf 9 (vectorOf 9 cell)
+       return (Sudoku rows)
+
+prop_Sudoku :: Sudoku -> Bool
+prop_Sudoku s = isSudoku s
 
 type Block = [Maybe Int]
 
