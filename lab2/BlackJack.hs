@@ -109,7 +109,7 @@ prop_onTopOf_assoc p1 p2 p3 = p1<+(p2<+p3) == (p1<+p2)<+p3
 
 -- Checks that (<+) doesn't change the size of the hand
 prop_size_onTopOf :: Hand -> Hand -> Bool
-prop_size_onTopOf h1 h2 = (size (h1<+h2)) == (size h1 + size h2)
+prop_size_onTopOf h1 h2 = size (h1<+h2) == (size h1 + size h2)
 
 -- Returns a full pack of cards. One of each, not shuffled
 fullDeck :: Hand
