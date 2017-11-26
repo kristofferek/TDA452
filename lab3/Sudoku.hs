@@ -26,11 +26,11 @@ checkAllValue list = all (\x -> checkOneValue x) list
 -- A3
 -- Check if the sudoku is filled with numbers
 isFilled :: Sudoku -> Bool
-isFilled sudoku = all (\x -> checkAllFilled x) s
+isFilled sudoku = all checkAllFilled s
   where s = rows sudoku
 
 checkAllFilled :: [Maybe Int] -> Bool
-checkAllFilled list = all (\x -> checkOneFilled x) list
+checkAllFilled list = all checkOneFilled list
   where checkOneFilled Nothing = False
         checkOneFilled _ = True
 
@@ -106,7 +106,7 @@ blocks sudoku = s  ++ transpose s ++ rows' s
 -- D3
 -- Checks that no block in a sudoku contains the same digit twice
 isOkay :: Sudoku -> Bool
-isOkay s =  all (\x -> isOkayBlock x) (blocks s)
+isOkay s =  all isOkayBlock (blocks s)
 
 
 --            PART B
