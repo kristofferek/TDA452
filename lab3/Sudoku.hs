@@ -1,6 +1,7 @@
 import Test.QuickCheck
 import Data.Char
 import Data.List
+import Data.Maybe
 
 newtype Sudoku = Sudoku { rows :: [[Maybe Int]] } deriving Show
 
@@ -115,7 +116,12 @@ type Pos = (Int,Int)
 
 -- E1
 -- Returns all positios that are still blank in the sudoku
--- blanks :: Sudoku -> [Pos]
+blanks :: Sudoku -> [Pos]
+blanks s =
+  [(y,x)                                -- generate a Pos pair
+    | (y, row) <- zip [0..8] (rows s)   -- for each row with its coordinate
+    , (x, cell) <- zip [0..8] row       -- for each tile in the row (with coordinate)
+    , isNothing cell]                   -- if the cell is nothing
 
 -- prop_blanks
 
