@@ -5,6 +5,22 @@ import Data.Maybe
 
 newtype Sudoku = Sudoku { rows :: [[Maybe Int]] } deriving Show
 
+example :: Sudoku
+example =
+    Sudoku
+      [ [j 3,j 6,n  ,n  ,j 7,j 1,j 2,n  ,n  ]
+      , [n  ,j 5,n  ,n  ,n  ,n  ,j 1,j 8,n  ]
+      , [n  ,n  ,j 9,j 2,n  ,j 4,j 7,n  ,n  ]
+      , [n  ,n  ,n  ,n  ,j 1,j 3,n  ,j 2,j 8]
+      , [j 4,n  ,n  ,j 5,n  ,j 2,n  ,n  ,j 9]
+      , [j 2,j 7,n  ,j 4,j 6,n  ,n  ,n  ,n  ]
+      , [n  ,n  ,j 5,j 3,n  ,j 8,j 9,n  ,n  ]
+      , [n  ,j 8,j 3,n  ,n  ,n  ,n  ,j 6,n  ]
+      , [n  ,n  ,j 7,j 6,j 9,n  ,n  ,j 4,j 3]
+      ]
+  where
+    n = Nothing
+    j = Just
 -- A1
 -- Create a 9x9 blank sudoku
 -- number of rows and columns can be changed
@@ -119,24 +135,27 @@ type Pos = (Int,Int)
 blanks :: Sudoku -> [Pos]
 blanks s =
   [(y,x)                                -- generate a Pos pair
-    | (y, row) <- zip [0..8] (rows s)   -- for each row with its coordinate
-    , (x, cell) <- zip [0..8] row       -- for each tile in the row (with coordinate)
+    | (y, row) <- zip [0..] (rows s)   -- for each row with its coordinate
+    , (x, cell) <- zip [0..] row       -- for each tile in the row (with coordinate)
     , isNothing cell]                   -- if the cell is nothing
 
 -- prop_blanks
 
 -- E2
 -- Updates the given list with the new value at the given index
--- (!!=) :: [a] -> (Int,a) -> [a]
+(!!=) :: [a] -> (Int,a) -> [a]
+(!!=) l (index,a) = if index > length l then error "Index out of bounds"
+  else [if i == index then a else v | (i,v) <- (zip [0..] l)]
 
 -- write property here
-
 -- E3
 -- Updates the value at a given position in a sudoku
--- update :: Sudoku -> Pos -> Maybe Int -> Sudoku
-
+update :: Sudoku -> Pos -> Maybe Int -> Sudoku
+update s (iRow,iColumn) v = Sudoku [if iRow == tempIndex then row !!= (iColumn,v) else row | (tempIndex,row) <- (zip [0..] (rows s))]
 -- prop_ goes  here
 
 -- E4
 -- Returns all values that can be legally inserted at a given position
--- candidates :: Sudoku -> Pos -> [Int]
+candidates :: Sudoku -> Pos -> [Int]
+candidates s pos = [x | x <- [1..9], (isSudoku (updatedSudoku x) && isOkay (updatedSudoku x))]
+  where updatedSudoku x = update s pos (Just x)
