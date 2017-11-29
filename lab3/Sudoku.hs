@@ -175,16 +175,3 @@ solve sud | not (isOkay sud && isSudoku sud) = Nothing
       | null (candidates s x) = Nothing
       | otherwise = head $ filter isJust
         [ solve' (update s x (Just c)) xs | c <- candidates s x ] ++ [Nothing]
-
-
-{-
-solve :: Sudoku -> Maybe Sudoku
-solve sud | not (isOkay sud && isSudoku sud) = Nothing
-          | otherwise = Just (solve' sud (blanks sud))
-  where
-    solve' s b | null b = s
-               | null (candidates s (head b)) = error "Nothing"
-               | otherwise = solve'
-                    (update s (head b) (Just (head (candidates s (head b)))))
-                    (drop 1 b)
--}
