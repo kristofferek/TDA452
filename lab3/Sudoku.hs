@@ -157,8 +157,8 @@ update s (iRow,iColumn) v = Sudoku [if iRow == tempIndex then row !!= (iColumn,v
 -- E4
 -- Returns all values that can be legally inserted at a given position
 candidates :: Sudoku -> Pos -> [Int]
-candidates s pos = [x | x <- [1..9], isSudoku (updatedSudoku x) && isOkay (updatedSudoku x)]
-  where updatedSudoku x = update s pos (Just x)
+candidates sud pos = [x | x <- [1..9] ,isOkay (updatedSudoku x sud)]
+  where updatedSudoku x s = update s pos (Just x)
 
 -- F1
 solve :: Sudoku -> Maybe Sudoku
@@ -168,7 +168,7 @@ solve sud | not (isOkay sud && isSudoku sud) = Nothing
   where
     fillCell s [] = s
     fillCell s (x:xs) | null (candidates s x) = error "Nothing"
-                      | length xs == 65 = s
+                      | length xs == 66 = s
                       | otherwise = fillCell (update s x (Just (head (candidates s x)))) xs
 
 
