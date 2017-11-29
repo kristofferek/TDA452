@@ -151,25 +151,30 @@ blanks s =
 -- E3
 -- Updates the value at a given position in a sudoku
 update :: Sudoku -> Pos -> Maybe Int -> Sudoku
-update s (iRow,iColumn) v = Sudoku [if iRow == tempIndex then row !!= (iColumn,v) else row | (tempIndex,row) <- zip [0..] (rows s)]
+update s (iRow,iColumn) v =
+  Sudoku [if iRow == tempIndex
+          then row !!= (iColumn,v)
+          else row | (tempIndex,row) <- zip [0..] (rows s)]
+
 -- prop_ goes  here
 
 -- E4
 -- Returns all values that can be legally inserted at a given position
 candidates :: Sudoku -> Pos -> [Int]
-candidates s pos = [x | x <- [1..9], isSudoku (updatedSudoku x) && isOkay (updatedSudoku x)]
+candidates s pos = [x | x <- [1..9], isOkay (updatedSudoku x)]
   where updatedSudoku x = update s pos (Just x)
+
 
 -- F1
 solve :: Sudoku -> Maybe Sudoku
 solve sud | not (isOkay sud && isSudoku sud) = Nothing
---          | fillCell sud (blanks sud) == Nothing = Nothing
-          | otherwise = Just (fillCell sud (blanks sud))
+          | otherwise = solve' sud (blanks sud)
   where
-    fillCell s [] = s
-    fillCell s (x:xs) | null (candidates s x) = error "Nothing"
-                      | length xs == 65 = s
-                      | otherwise = fillCell (update s x (Just (head (candidates s x)))) xs
+    solve' s [] = Just s
+    solve' s (x:xs)
+      | null (candidates s x) = Nothing
+      | otherwise = head $ filter isJust
+        [ solve' (update s x (Just c)) xs | c <- candidates s x ] ++ [Nothing]
 
 
 {-
