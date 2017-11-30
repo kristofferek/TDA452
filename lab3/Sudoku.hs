@@ -126,7 +126,7 @@ isOkay :: Sudoku -> Bool
 isOkay s =  all isOkayBlock (blocks s)
 
 
---            PART B
+------------- PART B -----------------------------------------------------------
 
 type Pos = (Int,Int)
 
@@ -134,10 +134,10 @@ type Pos = (Int,Int)
 -- Returns all positios that are still blank in the sudoku
 blanks :: Sudoku -> [Pos]
 blanks s =
-  [(y,x)                                -- generate a Pos pair
-    | (y, row) <- zip [0..] (rows s)   -- for each row with its coordinate
-    , (x, cell) <- zip [0..] row       -- for each tile in the row (with coordinate)
-    , isNothing cell]                   -- if the cell is nothing
+  [(y,x)                             -- generate a Pos pair
+    | (y, row) <- zip [0..] (rows s) -- for each row with its coordinate
+    , (x, cell) <- zip [0..] row   -- for each tile in the row (with coordinate)
+    , isNothing cell]                -- if the cell is nothing
 
 -- prop_blanks
 
@@ -175,3 +175,21 @@ solve sud | not (isOkay sud && isSudoku sud) = Nothing
       | null (candidates s x) = Nothing
       | otherwise = head $ filter isJust
         [ solve' (update s x (Just c)) xs | c <- candidates s x ] ++ [Nothing]
+          -- adding nothing to the list so it's never empty when 'head' is run
+
+-- F2
+-- takes in a filepath, solves a sudoku and prints it out
+readAndSolve :: FilePath -> IO ()
+readAndSolve f = do s <- readSudoku f
+                    printSudoku $ fromJust $ solve s
+
+-- F3
+-- Checks if the first sudoku is a valid solution and returns true if
+-- all non-empty cells in the second argument exists in the first argument
+isSolutionOf :: Sudoku -> Sudoku -> Bool
+isSolutionOf s1 s2
+  | not (isOkay s1 && isSudoku s1 && isFilled s1) = False
+  | otherwise = and $ zipWith nothingOrEqual ((concat . rows)  s1) ((concat . rows) s2)
+    where
+      nothingOrEqual _ Nothing = True
+      nothingOrEqual s1 s2 = fromJust s1 == fromJust s2
