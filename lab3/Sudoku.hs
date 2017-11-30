@@ -25,18 +25,16 @@ example =
 -- Create a 9x9 blank sudoku
 -- number of rows and columns can be changed
 allBlankSudoku :: Sudoku
-allBlankSudoku = Sudoku (blankSudoku 9 9)
-  where blankSudoku x y = replicate x (replicate y n)
-        n = Nothing
+allBlankSudoku = Sudoku (replicate 9 (replicate 9 Nothing))
 
 -- A2
 -- Check if input is a legit sudoku
 isSudoku :: Sudoku -> Bool
-isSudoku sudoku = all (\x -> length x == 9) s && length s == 9 && all (\x -> checkAllValue x) s
+isSudoku sudoku = all (\x -> length x == 9) s && length s == 9 && all checkAllValue s
   where s = rows sudoku
 
 checkAllValue :: [Maybe Int] -> Bool
-checkAllValue list = all (\x -> checkOneValue x) list
+checkAllValue list = all checkOneValue list
   where checkOneValue (Just x) = x > 0 && x < 10
         checkOneValue Nothing = True
 
@@ -47,9 +45,7 @@ isFilled sudoku = all checkAllFilled s
   where s = rows sudoku
 
 checkAllFilled :: [Maybe Int] -> Bool
-checkAllFilled list = all checkOneFilled list
-  where checkOneFilled Nothing = False
-        checkOneFilled _ = True
+checkAllFilled list = all isJust list
 
 -- B1
 -- Print the Sudoku
@@ -80,12 +76,7 @@ divideSudoku s = Sudoku (map row s)
 -- Generator for one cell
 cell :: Gen (Maybe Int)
 cell = frequency [(9,return Nothing),
-                   (1, do
-                     n <- randInt
-                     return (Just n))]
-
-randInt :: Gen Int
-randInt = elements [1..9]
+                  (1, elements [Just n | n <- [1..9]])]
 
 -- C2
 -- an instance for generating Arbitrary Sudokus
@@ -97,7 +88,7 @@ instance Arbitrary Sudoku where
 -- C3
 -- Checks if a sudoku has correct size and has valid values
 prop_Sudoku :: Sudoku -> Bool
-prop_Sudoku s = isSudoku s
+prop_Sudoku = isSudoku
 
 -- Represents a row, column or a 3x3 block
 type Block = [Maybe Int]
@@ -139,7 +130,14 @@ blanks s =
     , (x, cell) <- zip [0..] row   -- for each tile in the row (with coordinate)
     , isNothing cell]                -- if the cell is nothing
 
--- prop_blanks
+prop_blanks :: Sudoku -> Bool
+prop_blanks s = all (prop_blanks' indexedSud) (blanks s)
+  where
+    indexedSud = zip [0..] $ map (zip [0..]) (rows s)
+    --first indexing all cell with x-values and then indexing the rows
+    prop_blanks' s (y,x)
+      | isNothing (snd (snd (s !! y) !! x)) = True
+      | otherwise = False
 
 -- E2
 -- Updates the given list with the new value at the given index
@@ -147,7 +145,9 @@ blanks s =
 (!!=) l (index,a) = if index > length l then error "Index out of bounds"
   else [if i == index then a else v | (i,v) <- zip [0..] l]
 
--- write property here
+prop_uList :: Eq a => [a] -> (Int,a) -> Property
+prop_uList l (i,v) = i >= 0 && i < length l ==> ((l !!= (i,v)) !! i) == v
+
 -- E3
 -- Updates the value at a given position in a sudoku
 update :: Sudoku -> Pos -> Maybe Int -> Sudoku
@@ -156,7 +156,12 @@ update s (iRow,iColumn) v =
           then row !!= (iColumn,v)
           else row | (tempIndex,row) <- zip [0..] (rows s)]
 
--- prop_ goes  here
+prop_update :: Sudoku -> Pos -> Maybe Int -> Property
+prop_update s (y,x) i = prop_validPos (y,x) ==>
+                        (rows (update s (y,x) i) !! y) !! x == i
+
+prop_validPos :: Pos -> Bool
+prop_validPos (y,x) = min y x >= 0 && max y x < 9
 
 -- E4
 -- Returns all values that can be legally inserted at a given position
@@ -173,9 +178,10 @@ solve sud | not (isOkay sud && isSudoku sud) = Nothing
     solve' s [] = Just s
     solve' s (x:xs)
       | null (candidates s x) = Nothing
-      | otherwise = head $ filter isJust
-        [ solve' (update s x (Just c)) xs | c <- candidates s x ] ++ [Nothing]
-          -- adding nothing to the list so it's never empty when 'head' is run
+      | otherwise = (listToMaybe . catMaybes)
+                    [ solve' (update s x (Just c)) xs | c <- candidates s x ]
+        -- creates a deep nested list which then flattens when recursion starts
+        -- to return up
 
 -- F2
 -- takes in a filepath, solves a sudoku and prints it out
@@ -189,7 +195,15 @@ readAndSolve f = do s <- readSudoku f
 isSolutionOf :: Sudoku -> Sudoku -> Bool
 isSolutionOf s1 s2
   | not (isOkay s1 && isSudoku s1 && isFilled s1) = False
-  | otherwise = and $ zipWith nothingOrEqual ((concat . rows)  s1) ((concat . rows) s2)
-    where
-      nothingOrEqual _ Nothing = True
-      nothingOrEqual s1 s2 = fromJust s1 == fromJust s2
+  | otherwise = and $ zipWith
+                      isNothingOrEqual ((concat . rows)  s1) ((concat . rows) s2)
+
+isNothingOrEqual :: Maybe Int -> Maybe Int -> Bool
+isNothingOrEqual _ Nothing = True
+isNothingOrEqual c1 c2 = fromJust c1 == fromJust c2
+
+-- F4
+-- Checks if a solution actually is a solution of the original sudoku
+prop_SolveSound :: Sudoku -> Property
+prop_SolveSound s = isOkay s ==> (sol `isSolutionOf` s)
+  where sol = fromJust $ solve s
