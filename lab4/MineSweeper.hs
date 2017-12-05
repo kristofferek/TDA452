@@ -1,0 +1,19 @@
+data Tile = Mine | Numeric Integer deriving Eq
+data Status = Hidden | Opened deriving (Eq,Show)
+data Cell = Cell {status :: Status, tile :: Tile}
+type Pos = (Int,Int)
+type Board = [[Cell]]
+
+instance Show Tile where
+  show tile = if tile == Mine then "*" else show tile
+
+instance Show Cell where
+  show (Cell status tile) = if status == Hidden then "." else show tile
+
+allBlankBoard :: Board
+allBlankBoard = replicate 9 (replicate 9 (Cell Opened (Numeric 0)))
+
+printBoard :: Board -> IO ()
+printBoard board = putStrLn $ concat [printBoard' x | x <- board]
+  where printBoard' [] = "\n"
+        printBoard' (x:xs) = show x ++ " " ++ printBoard' xs
