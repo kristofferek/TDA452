@@ -1,11 +1,12 @@
-data Tile = Mine | Numeric Integer deriving Eq
+data Tile = Mine | Numeric Int deriving Eq
 data Status = Hidden | Opened deriving (Eq,Show)
 data Cell = Cell {status :: Status, tile :: Tile}
 type Pos = (Int,Int)
 type Board = [[Cell]]
 
 instance Show Tile where
-  show tile = if tile == Mine then "*" else show tile
+  show Mine = "*"
+  show (Numeric i) = show i
 
 instance Show Cell where
   show (Cell status tile) = if status == Hidden then "." else show tile
