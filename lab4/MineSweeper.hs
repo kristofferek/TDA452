@@ -9,7 +9,8 @@ instance Show Tile where
   show (Numeric i) = show i
 
 instance Show Cell where
-  show (Cell status tile) = if status == Hidden then "." else show tile
+  show (Cell Hidden _) = "."
+  show (Cell _ tile) = show tile
 
 allBlankBoard :: Board
 allBlankBoard = replicate 9 (replicate 9 (Cell Opened (Numeric 0)))
