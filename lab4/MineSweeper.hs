@@ -12,6 +12,7 @@ data Input = Up
            | Down
            | Left
            | Right
+           | Open
            | Exit
            deriving (Eq,Show)
 
@@ -21,11 +22,14 @@ main = do
   clearScreen
   showCursor
   setCursorPosition 0 0
-  putStrLn "MineSweeper"
+  setSGR [SetColor Background Vivid Red]
+  setSGR [SetColor Foreground Vivid Black]
+  putStrLn "\t\tMine Sweeper\n"
+  setSGR [Reset]
   hSetEcho stdin False
   printBoard allBlankBoard
-  setCursorPosition 1 0
-  gameLoop allBlankBoard (0,1)
+  setCursorPosition 0 2
+  gameLoop allBlankBoard (0,2)
 
 instance Show Tile where
   show Mine = "💥"
@@ -35,29 +39,32 @@ instance Show Cell where
   show (Cell Hidden _) = "."
   show (Cell _ tile) = show tile
 
+gameLoop :: Board -> Coord -> IO ()
 gameLoop b marker = do
   drawMarker marker
   input <- getInput
   case input of
     Exit -> handleExit
+    Open -> drawOpen b marker
     _    -> handleDir b marker input
+
+drawOpen b m = do
+  putChar 'X'
+  gameLoop b m
 
 drawMarker :: Coord -> IO()
 drawMarker (xMarker, yMarker) = setCursorPosition yMarker xMarker
 
-handleDir b (xMark, yMark) input = gameLoop b newMarker
-  where newMarker = case input of
-                    Up    -> (xMark, yMark - 1)
-                    Down  -> (xMark, yMark + 1)
-                    Left  -> (xMark - 1, yMark)
-                    Right -> (xMark + 1, yMark)
+handleDir :: Board -> Coord -> Input -> IO ()
+handleDir b marker input = gameLoop b newMarker
+  where newMarker = marker |+| dirToCoord input
 
 dirToCoord :: Input -> Coord
 dirToCoord d
-  | d == Up    = (0, -1)
-  | d == Down  = (0,  1)
-  | d == Left  = (-1, 0)
-  | d == Right = (1,  0)
+  | d == Up    = (0, -2)
+  | d == Down  = (0,  2)
+  | d == Left  = (-5, 0)
+  | d == Right = (5,  0)
   | otherwise  = (0,  0)
 
 getInput :: IO Input
@@ -65,6 +72,7 @@ getInput = do
   char <- getChar
   case char of
     'q' -> return Exit
+    '\n'-> return Open
     'w' -> return Up
     's' -> return Down
     'a' -> return Left
@@ -76,11 +84,13 @@ allBlankBoard = replicate 9 (replicate 9 (Cell Hidden (Numeric 0)))
 
 printBoard :: Board -> IO ()
 printBoard board = putStrLn $ concat [printBoard' x | x <- board]
-  where printBoard' xs = foldr ((++) . show) "\n" xs
+  where printBoard' [] = "\n\n"
+        printBoard' (x:xs) = show x ++ "    " ++ printBoard' xs
 
 (|+|) :: Coord -> Coord -> Coord
 (|+|) (x1, y1) (x2, y2) = (x1 + x2, y1 + y2)
 
+handleExit :: IO ()
 handleExit = do
   clearScreen
   setSGR [ Reset ]
