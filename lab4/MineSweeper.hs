@@ -1,6 +1,7 @@
 import System.Random
 import System.Console.ANSI
 import Prelude hiding (Either(..))
+import System.IO
 
 data Tile = Mine | Numeric Int deriving Eq
 data Status = Hidden | Opened deriving (Eq,Show)
@@ -17,10 +18,14 @@ data Input = Up
 
 main :: IO()
 main = do
-  --board <- makeBoard
-  --printBoard board
-  inp <- getInput
-  print inp
+  clearScreen
+  showCursor
+  setCursorPosition 0 0
+  putStrLn "MineSweeper"
+  hSetEcho stdin False
+  printBoard allBlankBoard
+  setCursorPosition 1 0
+  gameLoop allBlankBoard (0,1)
 
 instance Show Tile where
   show Mine = "💥"
@@ -29,6 +34,23 @@ instance Show Tile where
 instance Show Cell where
   show (Cell Hidden _) = "."
   show (Cell _ tile) = show tile
+
+gameLoop b marker = do
+  drawMarker marker
+  input <- getInput
+  case input of
+    Exit -> handleExit
+    _    -> handleDir b marker input
+
+drawMarker :: Coord -> IO()
+drawMarker (xMarker, yMarker) = setCursorPosition yMarker xMarker
+
+handleDir b (xMark, yMark) input = gameLoop b newMarker
+  where newMarker = case input of
+                    Up    -> (xMark, yMark - 1)
+                    Down  -> (xMark, yMark + 1)
+                    Left  -> (xMark - 1, yMark)
+                    Right -> (xMark + 1, yMark)
 
 dirToCoord :: Input -> Coord
 dirToCoord d
@@ -54,8 +76,7 @@ allBlankBoard = replicate 9 (replicate 9 (Cell Hidden (Numeric 9)))
 
 printBoard :: Board -> IO ()
 printBoard board = putStrLn $ concat [printBoard' x | x <- board]
-  where printBoard' [] = "\n"
-        printBoard' (x:xs) = show x ++ " " ++ printBoard' xs
+  where printBoard' xs = foldr ((++) . show) "\n" xs
 
 (|+|) :: Coord -> Coord -> Coord
 (|+|) (x1, y1) (x2, y2) = (x1 + x2, y1 + y2)
@@ -74,4 +95,9 @@ openTile board (x,y) = [if iRow == y
                       then (Cell Opened (tile cell))
                       else cell | (iColumn,cell) <- zip [0..] r]
 
---chainBlanks :: Coord -> Board
+handleExit = do
+  clearScreen
+  setSGR [ Reset ]
+  setCursorPosition 0 0
+  showCursor
+  putStrLn "Thank you for playing!"
