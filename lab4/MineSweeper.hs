@@ -5,7 +5,6 @@ import Prelude hiding (Either(..))
 data Tile = Mine | Numeric Int deriving Eq
 data Status = Hidden | Opened deriving (Eq,Show)
 data Cell = Cell {status :: Status, tile :: Tile}
-type Pos = (Int,Int)
 type Board = [[Cell]]
 type Coord = (Int, Int)
 data Input = Up
@@ -51,7 +50,7 @@ getInput = do
     _ -> getInput
 
 allBlankBoard :: Board
-allBlankBoard = replicate 9 (replicate 9 (Cell Opened Mine))
+allBlankBoard = replicate 9 (replicate 9 (Cell Hidden (Numeric 9)))
 
 printBoard :: Board -> IO ()
 printBoard board = putStrLn $ concat [printBoard' x | x <- board]
@@ -60,3 +59,19 @@ printBoard board = putStrLn $ concat [printBoard' x | x <- board]
 
 (|+|) :: Coord -> Coord -> Coord
 (|+|) (x1, y1) (x2, y2) = (x1 + x2, y1 + y2)
+
+valueAtCoord :: Board -> Coord -> Tile
+valueAtCoord board (x,y) = tile $ (board!!y)!!x
+
+statusAtCoord :: Board -> Coord -> Status
+statusAtCoord board (x,y) = status $ (board!!y)!!x
+
+openTile :: Board -> Coord -> Board
+openTile board (x,y) = [if iRow == y
+                        then (replace row x)
+                        else row | (iRow,row) <- zip [0..] board]
+  where replace r p = [if iColumn == p
+                      then (Cell Opened (tile cell))
+                      else cell | (iColumn,cell) <- zip [0..] r]
+
+--chainBlanks :: Coord -> Board
