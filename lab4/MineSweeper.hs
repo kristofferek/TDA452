@@ -19,16 +19,7 @@ data Input = Up
 
 main :: IO()
 main = do
-  clearScreen
-  showCursor
-  setCursorPosition 0 0
-  setSGR [SetColor Background Vivid Red]
-  setSGR [SetColor Foreground Vivid Black]
-  putStrLn "\t\tMine Sweeper\n"
-  setSGR [Reset]
-  hSetEcho stdin False
-  printBoard allBlankBoard
-  setCursorPosition 0 2
+  drawGame allBlankBoard
   gameLoop allBlankBoard (0,2)
 
 instance Show Tile where
@@ -45,12 +36,34 @@ gameLoop b marker = do
   input <- getInput
   case input of
     Exit -> handleExit
-    Open -> drawOpen b marker
+    Open -> handleOpen b marker
     _    -> handleDir b marker input
 
-drawOpen b m = do
-  putChar 'X'
-  gameLoop b m
+handleOpen :: Board -> Coord -> IO ()
+handleOpen b (mX, mY) = do
+  let newBoard = openSpace b (markerToBoardCoord (mX,mY)) :: Board
+  drawGame newBoard
+  setCursorPosition mX mY
+  gameLoop newBoard (mX, mY)
+
+markerToBoardCoord :: Coord -> Coord
+markerToBoardCoord (x,y) = ((x+1) `div` 5, (y-2) `div` 2)
+
+
+drawGame :: Board -> IO ()
+drawGame b = do
+  clearScreen
+  showCursor
+  setCursorPosition 0 0
+  setSGR [SetColor Background Vivid Red]
+  setSGR [SetColor Foreground Vivid Black]
+  putStrLn "\t\tMine Sweeper\n"
+  setSGR [Reset]
+  setSGR [ SetConsoleIntensity BoldIntensity]
+  hSetEcho stdin False
+  printBoard b
+  setCursorPosition 0 2
+
 
 drawMarker :: Coord -> IO()
 drawMarker (xMarker, yMarker) = setCursorPosition yMarker xMarker
@@ -80,7 +93,10 @@ getInput = do
     _ -> getInput
 
 allBlankBoard :: Board
-allBlankBoard = replicate 9 (replicate 9 (Cell Hidden (Numeric 9)))
+allBlankBoard = replicate 9 (kindaCells)
+
+
+kindaCells = concat [replicate 4 (Cell Hidden (Numeric 2)), [Cell Hidden Mine], replicate 4 (Cell Hidden (Numeric 4))]
 
 printBoard :: Board -> IO ()
 printBoard board = putStrLn $ concat [printBoard' x | x <- board]
@@ -97,6 +113,24 @@ valueAtCoord board (x,y) = tile $ (board!!y)!!x
 
 statusAtCoord :: Board -> Coord -> Status
 statusAtCoord board (x,y) = status $ (board!!y)!!x
+
+openSpace :: Board -> Coord -> Board
+openSpace b c
+  | not (canOpen b c) = b
+  | otherwise = openSpace' b c
+
+  where
+    openLeft b (x,y)        = openSpace b (x-1,y)
+    openRight b (x,y)       = openSpace (openLeft b (x,y)) (x+1,y)
+    openUp b (x,y)          = openSpace (openRight b (x,y)) (x,y-1)
+    openDown b (x,y)        = openSpace (openUp b (x,y)) (x,y+1)
+    openSpace' b c          = openDown (openTile b c) c
+
+canOpen :: Board -> Coord -> Bool
+canOpen b c = isCoordValid c && valueAtCoord b c /= Mine && statusAtCoord b c /= Opened
+
+isCoordValid :: Coord -> Bool
+isCoordValid (x,y) = x>=0 && x<9 && y>=0 && y<9
 
 openTile :: Board -> Coord -> Board
 openTile board (x,y) = [if iRow == y
