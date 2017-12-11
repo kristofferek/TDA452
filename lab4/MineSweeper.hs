@@ -80,7 +80,7 @@ getInput = do
     _ -> getInput
 
 allBlankBoard :: Board
-allBlankBoard = replicate 9 (replicate 9 (Cell Hidden (Numeric 0)))
+allBlankBoard = replicate 9 (replicate 9 (Cell Hidden (Numeric 9)))
 
 printBoard :: Board -> IO ()
 printBoard board = putStrLn $ concat [printBoard' x | x <- board]
@@ -91,6 +91,21 @@ printBoard board = putStrLn $ concat [printBoard' x | x <- board]
 (|+|) (x1, y1) (x2, y2) = (x1 + x2, y1 + y2)
 
 handleExit :: IO ()
+
+valueAtCoord :: Board -> Coord -> Tile
+valueAtCoord board (x,y) = tile $ (board!!y)!!x
+
+statusAtCoord :: Board -> Coord -> Status
+statusAtCoord board (x,y) = status $ (board!!y)!!x
+
+openTile :: Board -> Coord -> Board
+openTile board (x,y) = [if iRow == y
+                        then replace row x
+                        else row | (iRow,row) <- zip [0..] board]
+  where replace r p = [if iColumn == p
+                      then Cell Opened (tile cell)
+                      else cell | (iColumn,cell) <- zip [0..] r]
+
 handleExit = do
   clearScreen
   setSGR [ Reset ]
