@@ -14,14 +14,15 @@ data Input = Up | Down | Left | Right | Open | Exit
 
 main :: IO()
 main = do
-  let board = calcBlankValues allBlankBoard
+  b <- makeBoard
+  let board = calcBlankValues b
   drawGame board
-  setCursorPosition 0 2
-  gameLoop board (0,2)
+  setCursorPosition 1 2
+  gameLoop board (1,2)
 
 instance Show Tile where
-  show Mine = "💥"
-  show (Numeric 0) = "□"
+  show Mine = "💣"
+  show (Numeric 0) = " "
   show (Numeric i) = show i
 
 
@@ -72,22 +73,24 @@ handleOpen b (mX, mY) = do
   gameLoop newBoard (mX, mY)
 
 markerToBoardCoord :: Coord -> Coord
-markerToBoardCoord (x,y) = ((x+1) `div` 5, (y-2) `div` 2)
+markerToBoardCoord (x,y) = ((x+3) `div` 5, (y-2) `div` 2)
 
 drawGame :: Board -> IO ()
 drawGame b = do
+  setSGR [ Reset ]
   clearScreen
   showCursor
   setCursorPosition 0 0
-  setSGR [SetColor Background Vivid Red]
-  setSGR [SetColor Foreground Vivid Black]
-  setSGR [ SetConsoleIntensity BoldIntensity]
+  setSGR [SetColor Background Vivid Red,
+          SetColor Foreground Vivid Black,
+          SetConsoleIntensity BoldIntensity]
   putStrLn "\t\tMine Sweeper\n"
   setSGR [Reset]
-  setSGR [ SetConsoleIntensity BoldIntensity]
+  setSGR [SetColor Background Vivid White,
+          SetColor Foreground Vivid Black,
+          SetConsoleIntensity BoldIntensity]
   hSetEcho stdin False
   printBoard b
-  setCursorPosition 0 2
 
 drawMarker :: Coord -> IO()
 drawMarker (xMarker, yMarker) = setCursorPosition yMarker xMarker
@@ -117,30 +120,38 @@ getInput = do
     _ -> getInput
 
 allBlankBoard :: Board
-allBlankBoard = replicate 9 (kindaCells)
-kindaCells = concat [replicate 4 (Cell Hidden (Numeric 0)), [Cell Hidden Mine], replicate 4 (Cell Hidden (Numeric 4))]
+allBlankBoard = replicate 18 (replicate 18 (Cell Hidden (Numeric 0)))
 
 makeBoard :: IO Board
 makeBoard = do
   g <- newStdGen
-  return randomBoard g
+  return (randomBoard g)
 
-randomBoard :: StdGen -> [[Cell]] -> Board
-randomBoard g b rows =
+randomBoard :: StdGen -> Board
+randomBoard g = randomBoard' g 18
   where
-    (i, g') = randomR (0,10) g
-    tile = randomTileValue i
+    randomBoard' g' 0 = []
+    randomBoard' g' rowCount = randRow:randomBoard' g'' (rowCount-1)
+      where
+        (randRow,g'') = randomRow g'
 
-randomTileValue :: Tile
-randomTileValue i = if i <= 2 then Mine else (Numeric 0)
+randomRow :: StdGen -> ([Cell], StdGen)
+randomRow g = (randomRow' g 18, stepGen g 18)
+  where
+    stepGen gR 0 = gR
+    stepGen gR ind = stepGen gR' (ind-1)
+      where (_, gR') = randomR (0,10) gR :: (Int,StdGen)
+
+    randomRow' g' 0 = []
+    randomRow' g' cellCount = Cell Hidden tile:randomRow' g'' (cellCount-1)
+      where
+        (i, g'') = randomR (0,10) g' :: (Int,StdGen)
+        tile = if i <= 3 then Mine else Numeric 0
 
 printBoard :: Board -> IO ()
-printBoard board = putStrLn $ concat [printBoard' x | x <- board]
-  where printBoard' [] = "\n\n"
+printBoard board = putStrLn $ " " ++ init (concat [printBoard' x | x <- board])
+  where printBoard' [] = "\n " ++ replicate (5*18) ' ' ++"\n "
         printBoard' (x:xs) = show x ++ "    " ++ printBoard' xs
-
-coordOutOfBound :: Coord -> Bool
-coordOutOfBound (x,y) = x < 0 && x > 9 && y < 0 && y > 9
 
 (|+|) :: Coord -> Coord -> Coord
 (|+|) (x1, y1) (x2, y2) = (x1 + x2, y1 + y2)
@@ -167,7 +178,7 @@ canOpen :: Board -> Coord -> Bool
 canOpen b c = isCoordValid c && valueAtCoord b c /= Mine && statusAtCoord b c /= Opened
 
 isCoordValid :: Coord -> Bool
-isCoordValid (x,y) = x>=0 && x<9 && y>=0 && y<9
+isCoordValid (x,y) = x>=0 && x<18 && y>=0 && y<18
 
 openTile :: Board -> Coord -> Board
 openTile board (x,y)  | statusAtCoord board (x,y) == Opened = board
@@ -181,25 +192,25 @@ openTile board (x,y)  | statusAtCoord board (x,y) == Opened = board
                       else row | (iRow,row) <- zip [0..] board]
 
 nbrMinesAround :: Board -> Coord -> Int
-nbrMinesAround board (x,y) = sum [minesAround' board (iColumn,iRow) | (iColumn,iRow) <- (castProd [x-1,x,x+1] [y-1,y,y+1])]
-  where castProd xlist ylist= [(xs,ys)| xs <- xlist, ys <- ylist,(xs /= x || ys /= y)]
-        minesAround' board coord | coordOutOfBound coord = 0
+nbrMinesAround board (x,y) = sum [minesAround' board (iColumn,iRow) | (iColumn,iRow) <- cartisProd [x-1,x,x+1] [y-1,y,y+1]]
+  where cartisProd xlist ylist= [(xs,ys)| xs <- xlist, ys <- ylist,xs /= x || ys /= y]
+        minesAround' board coord | not (isCoordValid coord) = 0
                                  | valueAtCoord board coord == Mine = 1
                                  | otherwise = 0
 
---genCell :: Gen (Tile)
---genCell = frequency  [(8, return (Numeric 0)),
---                    (2, return Mine)]
+revealBoard :: Board -> Board
+revealBoard b = [[Cell Opened (tile cell) | cell <- row] | row <- b]
 
 drawEndBoard :: Board -> IO ()
 drawEndBoard b = do
   (drawGame . revealBoard) b
-  setCursorPosition 20 0
+  setCursorPosition 40 0
   showCursor
 
 handleWin :: Board -> IO ()
 handleWin b = do
   drawEndBoard b
+  setSGR [Reset, SetConsoleIntensity BoldIntensity]
   putStrLn "You win!!"
   putStrLn "Lucky bastard"
   setSGR [ Reset ]
@@ -207,6 +218,7 @@ handleWin b = do
 handleLoose :: Board -> IO ()
 handleLoose b = do
   drawEndBoard b
+  setSGR [Reset, SetConsoleIntensity BoldIntensity]
   putStrLn "You loose sucker!"
   putStrLn "Better luck next time!"
   setSGR [ Reset ]
