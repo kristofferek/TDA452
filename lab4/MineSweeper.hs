@@ -8,41 +8,57 @@ data Status = Hidden | Opened deriving (Eq,Show)
 data Cell = Cell {status :: Status, tile :: Tile}
 type Board = [[Cell]]
 type Coord = (Int, Int)
-data Input = Up
-           | Down
-           | Left
-           | Right
-           | Open
-           | Exit
-           deriving (Eq,Show)
-
+data Input = Up | Down | Left | Right | Open | Exit
+               deriving (Eq,Show)
 
 main :: IO()
 main = do
-  drawGame allBlankBoard
+  let board = calcBlankValues allBlankBoard
+  drawGame board
   setCursorPosition 0 2
-  gameLoop allBlankBoard (0,2)
+  gameLoop board (0,2)
 
 instance Show Tile where
   show Mine = "💥"
   show (Numeric i) = show i
 
 instance Show Cell where
-  show (Cell Hidden _) = "."
+  show (Cell Hidden _) = "■"
   show (Cell _ tile) = show tile
+
+calcBlankValues :: Board -> Board
+calcBlankValues b =
+  [[Cell (status cell) (value b (x,y) (tile cell))
+    | (x, cell) <- zip [0..] row] | (y, row) <- zip [0..] b]
+    where
+      value board pos Mine = Mine
+      value board pos _    = Numeric (nbrMinesAround b pos)
 
 gameLoop :: Board -> Coord -> IO ()
 gameLoop b marker = do
   drawMarker marker
+  if playerHasWon b then handleWin b else handleInput b marker
+
+handleInput :: Board -> Coord -> IO ()
+handleInput b m = do
   input <- getInput
   case input of
-    Exit -> handleExit b
-    Open -> if isCoordValid marker then tryOpen b marker else handleExit b
-    _    -> handleDir b marker input
+    Exit -> handleLoose b
+    Open -> if isCoordValid (markerToBoardCoord m)
+            then tryOpen b m
+            else gameLoop b m
+    _    -> handleDir b m input
+
+playerHasWon :: Board -> Bool
+playerHasWon b = (and . concat) [[ checkCell cell | cell <- row] | row <- b ]
+  where
+    checkCell (Cell Opened _)    = True
+    checkCell (Cell Hidden Mine) = True
+    checkCell _                  = False
 
 tryOpen :: Board -> Coord -> IO ()
-tryOpen b m = case valueAtCoord b m of
-    Mine -> handleExit b
+tryOpen b m = case valueAtCoord b (markerToBoardCoord m) of
+    Mine -> handleLoose b
     _    -> handleOpen b m
 
 handleOpen :: Board -> Coord -> IO ()
@@ -55,7 +71,6 @@ handleOpen b (mX, mY) = do
 markerToBoardCoord :: Coord -> Coord
 markerToBoardCoord (x,y) = ((x+1) `div` 5, (y-2) `div` 2)
 
-
 drawGame :: Board -> IO ()
 drawGame b = do
   clearScreen
@@ -63,12 +78,12 @@ drawGame b = do
   setCursorPosition 0 0
   setSGR [SetColor Background Vivid Red]
   setSGR [SetColor Foreground Vivid Black]
+  setSGR [ SetConsoleIntensity BoldIntensity]
   putStrLn "\t\tMine Sweeper\n"
   setSGR [Reset]
   setSGR [ SetConsoleIntensity BoldIntensity]
   hSetEcho stdin False
   printBoard b
-
 
 drawMarker :: Coord -> IO()
 drawMarker (xMarker, yMarker) = setCursorPosition yMarker xMarker
@@ -102,7 +117,6 @@ allBlankBoard = replicate 9 testRow
 
 testRow :: [Cell]
 testRow = concat [replicate 4 (Cell Hidden (Numeric 2)), [Cell Hidden Mine], replicate 4 (Cell Hidden (Numeric 4))]
-
 
 printBoard :: Board -> IO ()
 printBoard board = putStrLn $ concat [printBoard' x | x <- board]
@@ -156,12 +170,22 @@ nbrMinesAround board (x,y) = sum [minesAround' board (iColumn,iRow) | (iColumn,i
 revealBoard :: Board -> Board
 revealBoard b = [[Cell Opened (tile cell) | cell <- row] | row <- b]
 
-handleExit :: Board -> IO ()
-handleExit b = do
-  drawGame (revealBoard b)
-  setSGR [ Reset ]
+drawEndBoard :: Board -> IO ()
+drawEndBoard b = do
+  (drawGame . revealBoard) b
   setCursorPosition 20 0
   showCursor
+
+handleWin :: Board -> IO ()
+handleWin b = do
+  drawEndBoard b
+  putStrLn "You win!!"
+  putStrLn "Lucky bastard"
+  setSGR [ Reset ]
+
+handleLoose :: Board -> IO ()
+handleLoose b = do
+  drawEndBoard b
   putStrLn "You loose sucker!"
   putStrLn "Better luck next time!"
   setSGR [ Reset ]
