@@ -2,6 +2,7 @@ import System.Random
 import System.Console.ANSI
 import Prelude hiding (Either(..))
 import System.IO
+import Test.QuickCheck
 
 data Tile = Mine | Numeric Int deriving Eq
 data Status = Hidden | Opened deriving (Eq,Show)
@@ -20,7 +21,9 @@ main = do
 
 instance Show Tile where
   show Mine = "💥"
+  show (Numeric 0) = "□"
   show (Numeric i) = show i
+
 
 instance Show Cell where
   show (Cell Hidden _) = "■"
@@ -84,6 +87,7 @@ drawGame b = do
   setSGR [ SetConsoleIntensity BoldIntensity]
   hSetEcho stdin False
   printBoard b
+  setCursorPosition 0 2
 
 drawMarker :: Coord -> IO()
 drawMarker (xMarker, yMarker) = setCursorPosition yMarker xMarker
@@ -113,15 +117,30 @@ getInput = do
     _ -> getInput
 
 allBlankBoard :: Board
-allBlankBoard = replicate 9 testRow
+allBlankBoard = replicate 9 (kindaCells)
+kindaCells = concat [replicate 4 (Cell Hidden (Numeric 0)), [Cell Hidden Mine], replicate 4 (Cell Hidden (Numeric 4))]
 
-testRow :: [Cell]
-testRow = concat [replicate 4 (Cell Hidden (Numeric 2)), [Cell Hidden Mine], replicate 4 (Cell Hidden (Numeric 4))]
+makeBoard :: IO Board
+makeBoard = do
+  g <- newStdGen
+  return randomBoard g
+
+randomBoard :: StdGen -> [[Cell]] -> Board
+randomBoard g b rows =
+  where
+    (i, g') = randomR (0,10) g
+    tile = randomTileValue i
+
+randomTileValue :: Tile
+randomTileValue i = if i <= 2 then Mine else (Numeric 0)
 
 printBoard :: Board -> IO ()
 printBoard board = putStrLn $ concat [printBoard' x | x <- board]
   where printBoard' [] = "\n\n"
         printBoard' (x:xs) = show x ++ "    " ++ printBoard' xs
+
+coordOutOfBound :: Coord -> Bool
+coordOutOfBound (x,y) = x < 0 && x > 9 && y < 0 && y > 9
 
 (|+|) :: Coord -> Coord -> Coord
 (|+|) (x1, y1) (x2, y2) = (x1 + x2, y1 + y2)
@@ -136,6 +155,7 @@ openSpace :: Board -> Coord -> Board
 openSpace b c
   | not (canOpen b c) = b
   | otherwise = openSpace' b c
+
   where
     openLeft b (x,y)        = openSpace b (x-1,y)
     openRight b (x,y)       = openSpace (openLeft b (x,y)) (x+1,y)
@@ -161,14 +181,15 @@ openTile board (x,y)  | statusAtCoord board (x,y) == Opened = board
                       else row | (iRow,row) <- zip [0..] board]
 
 nbrMinesAround :: Board -> Coord -> Int
-nbrMinesAround board (x,y) = sum [minesAround' board (iColumn,iRow) | (iColumn,iRow) <- cartisProd [x-1,x,x+1] [y-1,y,y+1]]
-  where cartisProd xlist ylist= [(xs,ys)| xs <- xlist, ys <- ylist, xs /= x || ys /= y]
-        minesAround' board coord | not (isCoordValid coord) = 0
+nbrMinesAround board (x,y) = sum [minesAround' board (iColumn,iRow) | (iColumn,iRow) <- (castProd [x-1,x,x+1] [y-1,y,y+1])]
+  where castProd xlist ylist= [(xs,ys)| xs <- xlist, ys <- ylist,(xs /= x || ys /= y)]
+        minesAround' board coord | coordOutOfBound coord = 0
                                  | valueAtCoord board coord == Mine = 1
                                  | otherwise = 0
 
-revealBoard :: Board -> Board
-revealBoard b = [[Cell Opened (tile cell) | cell <- row] | row <- b]
+--genCell :: Gen (Tile)
+--genCell = frequency  [(8, return (Numeric 0)),
+--                    (2, return Mine)]
 
 drawEndBoard :: Board -> IO ()
 drawEndBoard b = do
