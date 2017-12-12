@@ -98,15 +98,11 @@ getInput = do
     _ -> getInput
 
 allBlankBoard :: Board
-<<<<<<< HEAD
 allBlankBoard = replicate 9 testRow
 
 testRow :: [Cell]
 testRow = concat [replicate 4 (Cell Hidden (Numeric 2)), [Cell Hidden Mine], replicate 4 (Cell Hidden (Numeric 4))]
-=======
-allBlankBoard = replicate 9 (kindaCells)
-kindaCells = concat [replicate 4 (Cell Hidden (Numeric 2)), [Cell Hidden Mine], replicate 4 (Cell Hidden (Numeric 4))]
->>>>>>> 7b2092d12bd8655cd30e1f733dbf3a035a6e1d64
+
 
 printBoard :: Board -> IO ()
 printBoard board = putStrLn $ concat [printBoard' x | x <- board]
