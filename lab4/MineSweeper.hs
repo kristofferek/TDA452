@@ -99,13 +99,20 @@ allBlankBoard :: Board
 allBlankBoard = replicate 9 (kindaCells)
 kindaCells = concat [replicate 4 (Cell Hidden (Numeric 0)), [Cell Hidden Mine], replicate 4 (Cell Hidden (Numeric 4))]
 
-allRandomBoard :: Board
-allRandomBoard = [[Cell Hidden randomTileValue | _ <- row] | row <- allBlankBoard]
-
-randomTileValue = do
+makeBoard :: IO Board
+makeBoard = do
   g <- newStdGen
-  (i, g') <- (randomR (0,10) g)
-  if i <= 2 then Mine else (Numeric 0)
+  return randomBoard g
+
+randomBoard :: StdGen -> [[Cell]] -> Board
+randomBoard g b rows =
+
+ where
+   (i, g') = randomR (0,10) g
+   tile = randomTileValue i
+
+randomTileValue :: Tile
+randomTileValue i = if i <= 2 then Mine else (Numeric 0)
 
 printBoard :: Board -> IO ()
 printBoard board = putStrLn $ concat [printBoard' x | x <- board]
