@@ -109,9 +109,6 @@ printBoard board = putStrLn $ concat [printBoard' x | x <- board]
   where printBoard' [] = "\n\n"
         printBoard' (x:xs) = show x ++ "    " ++ printBoard' xs
 
-coordOutOfBound :: Coord -> Bool
-coordOutOfBound (x,y) = x < 0 && x > 9 && y < 0 && y > 9
-
 (|+|) :: Coord -> Coord -> Coord
 (|+|) (x1, y1) (x2, y2) = (x1 + x2, y1 + y2)
 
@@ -150,20 +147,20 @@ openTile board (x,y)  | statusAtCoord board (x,y) == Opened = board
                       else row | (iRow,row) <- zip [0..] board]
 
 nbrMinesAround :: Board -> Coord -> Int
-nbrMinesAround board (x,y) = sum [minesAround' board (iColumn,iRow) | (iColumn,iRow) <- (castProd [x-1,x,x+1] [y-1,y,y+1])]
-  where castProd xlist ylist= [(xs,ys)| xs <- xlist, ys <- ylist,(xs /= x || ys /= y)]
-        minesAround' board coord | coordOutOfBound coord = 0
+nbrMinesAround board (x,y) = sum [minesAround' board (iColumn,iRow) | (iColumn,iRow) <- cartisProd [x-1,x,x+1] [y-1,y,y+1]]
+  where cartisProd xlist ylist= [(xs,ys)| xs <- xlist, ys <- ylist, xs /= x || ys /= y]
+        minesAround' board coord | not (isCoordValid coord) = 0
                                  | valueAtCoord board coord == Mine = 1
                                  | otherwise = 0
 
 revealBoard :: Board -> Board
 revealBoard b = [[Cell Opened (tile cell) | cell <- row] | row <- b]
 
-handleExit :: IO ()
-handleExit = do
+handleExit :: Board -> IO ()
+handleExit b = do
   drawGame (revealBoard b)
   setSGR [ Reset ]
-  setCursorPosition 0 0
+  setCursorPosition 20 0
   showCursor
   putStrLn "You loose sucker!"
   putStrLn "Better luck next time!"
