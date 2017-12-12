@@ -2,6 +2,7 @@ import System.Random
 import System.Console.ANSI
 import Prelude hiding (Either(..))
 import System.IO
+import Test.QuickCheck
 
 data Tile = Mine | Numeric Int deriving Eq
 data Status = Hidden | Opened deriving (Eq,Show)
@@ -24,7 +25,9 @@ main = do
 
 instance Show Tile where
   show Mine = "💥"
+  show (Numeric 0) = "□"
   show (Numeric i) = show i
+
 
 instance Show Cell where
   show (Cell Hidden _) = "."
@@ -94,7 +97,15 @@ getInput = do
 
 allBlankBoard :: Board
 allBlankBoard = replicate 9 (kindaCells)
-kindaCells = concat [replicate 4 (Cell Hidden (Numeric 2)), [Cell Hidden Mine], replicate 4 (Cell Hidden (Numeric 4))]
+kindaCells = concat [replicate 4 (Cell Hidden (Numeric 0)), [Cell Hidden Mine], replicate 4 (Cell Hidden (Numeric 4))]
+
+allRandomBoard :: Board
+allRandomBoard = [[Cell Hidden randomTileValue | _ <- row] | row <- allBlankBoard]
+
+randomTileValue = do
+  g <- newStdGen
+  (i, g') <- (randomR (0,10) g)
+  if i <= 2 then Mine else (Numeric 0)
 
 printBoard :: Board -> IO ()
 printBoard board = putStrLn $ concat [printBoard' x | x <- board]
@@ -148,6 +159,10 @@ nbrMinesAround board (x,y) = sum [minesAround' board (iColumn,iRow) | (iColumn,i
         minesAround' board coord | coordOutOfBound coord = 0
                                  | valueAtCoord board coord == Mine = 1
                                  | otherwise = 0
+
+--genCell :: Gen (Tile)
+--genCell = frequency  [(8, return (Numeric 0)),
+--                    (2, return Mine)]
 
 handleExit :: IO ()
 handleExit = do
