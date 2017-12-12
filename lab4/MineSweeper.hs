@@ -20,6 +20,7 @@ data Input = Up
 main :: IO()
 main = do
   drawGame allBlankBoard
+  setCursorPosition 0 2
   gameLoop allBlankBoard (0,2)
 
 instance Show Tile where
@@ -35,9 +36,14 @@ gameLoop b marker = do
   drawMarker marker
   input <- getInput
   case input of
-    Exit -> handleExit
-    Open -> handleOpen b marker
+    Exit -> handleExit b
+    Open -> if isCoordValid marker then tryOpen b marker else handleExit b
     _    -> handleDir b marker input
+
+tryOpen :: Board -> Coord -> IO ()
+tryOpen b m = case valueAtCoord b m of
+    Mine -> handleExit b
+    _    -> handleOpen b m
 
 handleOpen :: Board -> Coord -> IO ()
 handleOpen b (mX, mY) = do
@@ -62,7 +68,6 @@ drawGame b = do
   setSGR [ SetConsoleIntensity BoldIntensity]
   hSetEcho stdin False
   printBoard b
-  setCursorPosition 0 2
 
 
 drawMarker :: Coord -> IO()
@@ -93,10 +98,10 @@ getInput = do
     _ -> getInput
 
 allBlankBoard :: Board
-allBlankBoard = replicate 9 (kindaCells)
+allBlankBoard = replicate 9 testRow
 
-
-kindaCells = concat [replicate 4 (Cell Hidden (Numeric 2)), [Cell Hidden Mine], replicate 4 (Cell Hidden (Numeric 4))]
+testRow :: [Cell]
+testRow = concat [replicate 4 (Cell Hidden (Numeric 2)), [Cell Hidden Mine], replicate 4 (Cell Hidden (Numeric 4))]
 
 printBoard :: Board -> IO ()
 printBoard board = putStrLn $ concat [printBoard' x | x <- board]
@@ -105,8 +110,6 @@ printBoard board = putStrLn $ concat [printBoard' x | x <- board]
 
 (|+|) :: Coord -> Coord -> Coord
 (|+|) (x1, y1) (x2, y2) = (x1 + x2, y1 + y2)
-
-handleExit :: IO ()
 
 valueAtCoord :: Board -> Coord -> Tile
 valueAtCoord board (x,y) = tile $ (board!!y)!!x
@@ -118,7 +121,6 @@ openSpace :: Board -> Coord -> Board
 openSpace b c
   | not (canOpen b c) = b
   | otherwise = openSpace' b c
-
   where
     openLeft b (x,y)        = openSpace b (x-1,y)
     openRight b (x,y)       = openSpace (openLeft b (x,y)) (x+1,y)
@@ -140,9 +142,14 @@ openTile board (x,y) = [if iRow == y
                       then Cell Opened (tile cell)
                       else cell | (iColumn,cell) <- zip [0..] r]
 
-handleExit = do
-  clearScreen
-  setSGR [ Reset ]
-  setCursorPosition 0 0
+revealBoard :: Board -> Board
+revealBoard b = [[Cell Opened (tile cell) | cell <- row] | row <- b]
+
+handleExit :: Board -> IO ()
+handleExit b = do
+  drawGame (revealBoard b)
+  setCursorPosition 20 0
   showCursor
-  putStrLn "Thank you for playing!"
+  putStrLn "You loose sucker!"
+  putStrLn "Better luck next time!"
+  setSGR [ Reset ]
