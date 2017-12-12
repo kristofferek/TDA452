@@ -80,17 +80,18 @@ getInput = do
     _ -> getInput
 
 allBlankBoard :: Board
-allBlankBoard = replicate 9 (replicate 9 (Cell Hidden (Numeric 9)))
+allBlankBoard = replicate 9 (replicate 9 (Cell Opened Mine))
 
 printBoard :: Board -> IO ()
 printBoard board = putStrLn $ concat [printBoard' x | x <- board]
   where printBoard' [] = "\n\n"
         printBoard' (x:xs) = show x ++ "    " ++ printBoard' xs
 
+coordOutOfBound :: Coord -> Bool
+coordOutOfBound (x,y) = x < 0 && x > 9 && y < 0 && y > 9
+
 (|+|) :: Coord -> Coord -> Coord
 (|+|) (x1, y1) (x2, y2) = (x1 + x2, y1 + y2)
-
-handleExit :: IO ()
 
 valueAtCoord :: Board -> Coord -> Tile
 valueAtCoord board (x,y) = tile $ (board!!y)!!x
@@ -99,13 +100,24 @@ statusAtCoord :: Board -> Coord -> Status
 statusAtCoord board (x,y) = status $ (board!!y)!!x
 
 openTile :: Board -> Coord -> Board
-openTile board (x,y) = [if iRow == y
-                        then replace row x
-                        else row | (iRow,row) <- zip [0..] board]
-  where replace r p = [if iColumn == p
-                      then Cell Opened (tile cell)
-                      else cell | (iColumn,cell) <- zip [0..] r]
+openTile board (x,y)  | statusAtCoord board (x,y) == Opened = board
+                      | valueAtCoord board (x,y) == Mine = newBoard
+                      | otherwise = newBoard
+    where replace r p = [if iColumn == p
+                        then Cell Opened (tile cell)
+                        else cell | (iColumn,cell) <- zip [0..] r]
+          newBoard = [if iRow == y
+                      then replace row x
+                      else row | (iRow,row) <- zip [0..] board]
 
+nbrMinesAround :: Board -> Coord -> Int
+nbrMinesAround board (x,y) = sum [minesAround' board (iColumn,iRow) | (iColumn,iRow) <- (castProd [x-1,x,x+1] [y-1,y,y+1])]
+  where castProd xlist ylist= [(xs,ys)| xs <- xlist, ys <- ylist,(xs /= x || ys /= y)]
+        minesAround' board coord | coordOutOfBound coord = 0
+                                 | valueAtCoord board coord == Mine = 1
+                                 | otherwise = 0
+
+handleExit :: IO ()
 handleExit = do
   clearScreen
   setSGR [ Reset ]
