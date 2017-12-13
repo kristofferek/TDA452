@@ -10,10 +10,13 @@ implementation = Interface
     iOpenSpace        = openSpace,
     iIsCoordValid     = isCoordValid,
     iValueAtCoord     = valueAtCoord,
+    iStatusAtCoord    = statusAtCoord,
     iCalcBlankValues  = calcBlankValues,
     iPlayerHasWon     = playerHasWon,
     iAddCoords        = (|+|),
-    iRevealBoard      = revealBoard
+    iRevealBoard      = revealBoard,
+    iFlagTile         = flagTile,
+    iHiddenBlanks     = hiddenBlanks
   }
 
 main :: IO ()
@@ -38,6 +41,7 @@ playerHasWon b = (and . concat) [[ checkCell cell | cell <- row] | row <- b ]
   where
     checkCell (Cell Opened _)    = True
     checkCell (Cell Hidden Mine) = True
+    checkCell (Cell Flag Mine)   = True
     checkCell _                  = False
 
 {-
@@ -70,23 +74,24 @@ randomRow g = (randomRow' g 18, stepGen g 18)
         (i, g'') = randomR (0,10) g' :: (Int,StdGen)
         tile = if i <= 3 then Mine else Numeric 0
 
+-- Adds two coords together
 (|+|) :: Coord -> Coord -> Coord
 (|+|) (x1, y1) (x2, y2) = (x1 + x2, y1 + y2)
 
 {-
-Return mine or nbr of mines around the cells
+Returns mine or nbr of mines around the cells
 -}
 valueAtCoord :: Board -> Coord -> Tile
 valueAtCoord board (x,y) = tile $ (board!!y)!!x
 
 {-
-Hidden or Opened
+Get the the status of a specific coord
 -}
 statusAtCoord :: Board -> Coord -> Status
 statusAtCoord board (x,y) = status $ (board!!y)!!x
 
 {-
-Open all the blank cells connected to the opened blank cell
+Open all the blank cells connected to the inputed cell
 -}
 openSpace :: Board -> Coord -> Board
 openSpace b c
@@ -101,7 +106,7 @@ openSpace b c
     openSpace' b c          = openDown (openTile b c) c
 
 {-
-Return true if the cursor is inside the board
+Return true if the coord is inside the board
 -}
 canOpen :: Board -> Coord -> Bool
 canOpen b c = isCoordValid c && valueAtCoord b c /= Mine && statusAtCoord b c /= Opened
@@ -114,14 +119,14 @@ Open the choosen cell
 -}
 openTile :: Board -> Coord -> Board
 openTile board (x,y)  | statusAtCoord board (x,y) == Opened = board
-                      | valueAtCoord board (x,y) == Mine = newBoard
                       | otherwise = newBoard
-    where replace r p = [if iColumn == p
-                        then Cell Opened (tile cell)
-                        else cell | (iColumn,cell) <- zip [0..] r]
-          newBoard = [if iRow == y
-                      then replace row x
-                      else row | (iRow,row) <- zip [0..] board]
+    where
+      newBoard = [if iRow == y
+                  then replace row x
+                  else row | (iRow,row) <- zip [0..] board]
+      replace r p = [if iColumn == p
+                     then Cell Opened (tile cell)
+                     else cell | (iColumn,cell) <- zip [0..] r]
 
 {-
 Return the nbr of mines around the choosen cell
@@ -132,6 +137,28 @@ nbrMinesAround board (x,y) = sum [minesAround' board (iColumn,iRow) | (iColumn,i
         minesAround' board coord | not (isCoordValid coord) = 0
                                  | valueAtCoord board coord == Mine = 1
                                  | otherwise = 0
+
+-- Marks the cell at the given coordinate with a flag
+flagTile :: Board -> Coord -> Board
+flagTile board (x,y)
+  | statusAtCoord board (x,y) == Opened = board
+  | otherwise = newBoard
+    where
+      newBoard = [if iRow == y
+                  then replace row x
+                  else row | (iRow,row) <- zip [0..] board]
+      replace r p = [if iColumn == p
+                     then if status cell == Flag
+                          then Cell Hidden (tile cell)
+                          else Cell Flag (tile cell)
+                     else cell | (iColumn,cell) <- zip [0..] r]
+
+hiddenBlanks :: Board -> Int
+hiddenBlanks b = (sum . concat) [[hiddenBlanks' cell | cell <- row] | row <- b]
+  where
+    hiddenBlanks' (Cell Hidden (Numeric i)) = 1
+    hiddenBlanks' _ = 0
+
 {-
 Reveal the board
 -}

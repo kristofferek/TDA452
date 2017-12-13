@@ -10,12 +10,13 @@ instance Show Tile where
   show (Numeric 0) = " "
   show (Numeric i) = show i
 
-data Status = Hidden | Opened deriving (Eq,Show)
+data Status = Hidden | Opened | Flag deriving (Eq,Show)
 
 data Cell = Cell {status :: Status, tile :: Tile}
 
 instance Show Cell where
   show (Cell Hidden _) = "■"
+  show (Cell Flag _) = "🚩"
   show (Cell _ tile) = show tile
 
 type Board = [[Cell]]
