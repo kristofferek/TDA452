@@ -64,7 +64,7 @@ handleOpen i b (mX, mY) = do
   gameLoop i newBoard (mX, mY)
 
 markerToBoardCoord :: Coord -> Coord
-markerToBoardCoord (x,y) = ((x+1) `div` 3, (y-2) `div` 2)
+markerToBoardCoord (x,y) = ((x+1) `div` 3, y-4)
 
 drawGame :: Board -> IO ()
 drawGame b = do
