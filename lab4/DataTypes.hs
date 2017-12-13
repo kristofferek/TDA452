@@ -1,5 +1,8 @@
 module DataTypes where
 
+{-
+Create all the necessary data types
+-}
 data Tile = Mine | Numeric Int deriving Eq
 
 instance Show Tile where
