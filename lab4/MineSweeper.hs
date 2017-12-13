@@ -19,6 +19,9 @@ implementation = Interface
 main :: IO ()
 main = runGame implementation
 
+{-
+Calculate the amount of mines around all the blank cells
+-}
 calcBlankValues :: Board -> Board
 calcBlankValues b =
   [[Cell (status cell) (value b (x,y) (tile cell))
@@ -27,6 +30,9 @@ calcBlankValues b =
       value board pos Mine = Mine
       value board pos _    = Numeric (nbrMinesAround b pos)
 
+{-
+Return true if there is no mines blank cells left
+-}
 playerHasWon :: Board -> Bool
 playerHasWon b = (and . concat) [[ checkCell cell | cell <- row] | row <- b ]
   where
@@ -34,9 +40,15 @@ playerHasWon b = (and . concat) [[ checkCell cell | cell <- row] | row <- b ]
     checkCell (Cell Hidden Mine) = True
     checkCell _                  = False
 
+{-
+Create a board with only hidden blank cells
+-}
 allBlankBoard :: Board
 allBlankBoard = replicate 18 (replicate 18 (Cell Hidden (Numeric 0)))
 
+{-
+Create a board where a cell has 30% to be a mine
+-}
 randomBoard :: StdGen -> Board
 randomBoard g = randomBoard' g 18
   where
@@ -61,12 +73,21 @@ randomRow g = (randomRow' g 18, stepGen g 18)
 (|+|) :: Coord -> Coord -> Coord
 (|+|) (x1, y1) (x2, y2) = (x1 + x2, y1 + y2)
 
+{-
+Return mine or nbr of mines around the cells
+-}
 valueAtCoord :: Board -> Coord -> Tile
 valueAtCoord board (x,y) = tile $ (board!!y)!!x
 
+{-
+Hidden or Opened
+-}
 statusAtCoord :: Board -> Coord -> Status
 statusAtCoord board (x,y) = status $ (board!!y)!!x
 
+{-
+Open all the blank cells connected to the opened blank cell
+-}
 openSpace :: Board -> Coord -> Board
 openSpace b c
   | not (canOpen b c) = b
@@ -79,12 +100,18 @@ openSpace b c
     openDown b (x,y)        = openSpace (openUp b (x,y)) (x,y+1)
     openSpace' b c          = openDown (openTile b c) c
 
+{-
+Return true if the cursor is inside the board
+-}
 canOpen :: Board -> Coord -> Bool
 canOpen b c = isCoordValid c && valueAtCoord b c /= Mine && statusAtCoord b c /= Opened
 
 isCoordValid :: Coord -> Bool
 isCoordValid (x,y) = x>=0 && x<18 && y>=0 && y<18
 
+{-
+Open the choosen cell
+-}
 openTile :: Board -> Coord -> Board
 openTile board (x,y)  | statusAtCoord board (x,y) == Opened = board
                       | valueAtCoord board (x,y) == Mine = newBoard
@@ -96,12 +123,17 @@ openTile board (x,y)  | statusAtCoord board (x,y) == Opened = board
                       then replace row x
                       else row | (iRow,row) <- zip [0..] board]
 
+{-
+Return the nbr of mines around the choosen cell
+-}
 nbrMinesAround :: Board -> Coord -> Int
 nbrMinesAround board (x,y) = sum [minesAround' board (iColumn,iRow) | (iColumn,iRow) <- cartisProd [x-1,x,x+1] [y-1,y,y+1]]
   where cartisProd xlist ylist= [(xs,ys)| xs <- xlist, ys <- ylist,xs /= x || ys /= y]
         minesAround' board coord | not (isCoordValid coord) = 0
                                  | valueAtCoord board coord == Mine = 1
                                  | otherwise = 0
-
+{-
+Reveal the board
+-}
 revealBoard :: Board -> Board
 revealBoard b = [[Cell Opened (tile cell) | cell <- row] | row <- b]
