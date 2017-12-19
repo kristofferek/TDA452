@@ -1,5 +1,8 @@
 module DataTypes where
 
+import Test.QuickCheck
+import Test.QuickCheck.Gen
+
 {-
 Create all the necessary data types
 -}
@@ -19,6 +22,18 @@ instance Show Cell where
   show (Cell Flag _) = "🚩"
   show (Cell _ tile) = show tile
 
-type Board = [[Cell]]
+newtype Board = Board {rows :: [[Cell]]} deriving Show
 
 type Coord = (Int, Int)
+
+
+-- Generator for one cell
+cell :: Gen Cell
+cell = frequency [(1, return (Cell Hidden Mine)),
+                  (2, return (Cell Hidden (Numeric 0)))]
+
+-- an instance for generating Arbitrary Sudokus
+instance Arbitrary Board where
+  arbitrary = do
+    grid <- vectorOf 18 (vectorOf 18 cell)
+    return (Board grid)

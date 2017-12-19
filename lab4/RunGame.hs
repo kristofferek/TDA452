@@ -2,18 +2,17 @@ module RunGame where
 
 import System.Console.ANSI
 import System.IO
-import System.Random
 import Prelude hiding (Either(..))
 import Data.Colour
 import Data.Colour.SRGB
 import DataTypes
+import Test.QuickCheck
 
 data Input = Up | Down | Left | Right | Open | Exit | FlagMark
                deriving (Eq,Show)
 
 data Interface = Interface
   { iAllBlankBoard    :: Board,
-    iRandomBoard      :: StdGen -> Board,
     iOpenSpace        :: Board -> Coord -> Board,
     iIsCoordValid     :: Coord -> Bool,
     iValueAtCoord     :: Board -> Coord -> Tile,
@@ -28,17 +27,14 @@ data Interface = Interface
 
 runGame :: Interface -> IO()
 runGame i = do
-  b <- makeBoard i
+  hSetEcho stdin False
+  hSetBuffering stdin  NoBuffering
+  hSetBuffering stdout NoBuffering
+  b <- generate arbitrary :: IO Board
   let board = iCalcBlankValues i b -- Calculates the right values for all blanks
   drawGame i board
   setCursorPosition 0 4
   gameLoop i board (0,4)
-
--- Creates a random board with mines and blanks
-makeBoard :: Interface -> IO Board
-makeBoard i = do
-  g <- newStdGen
-  return (iRandomBoard i g)
 
 gameLoop :: Interface -> Board -> Coord -> IO ()
 gameLoop i b marker = do
@@ -90,7 +86,7 @@ flagCell :: Interface -> Board -> Coord -> IO ()
 flagCell i b (mX, mY) = do
   let (boardX, boardY) = markerToBoardCoord (mX, mY)
   let newBoard = iFlagTile i b (boardX, boardY)
-  putStr $ show $ (newBoard !! boardY) !! boardX
+  putStr $ show $ (rows newBoard !! boardY) !! boardX
   setCursorPosition mX mY
   gameLoop i newBoard (mX, mY)
 
@@ -120,7 +116,7 @@ drawGame i b = do
 
 -- Draws the board
 drawBoard :: Board -> IO ()
-drawBoard board = sequence_ $ concat [putChar '\n':[drawCell cell | cell <- row ] | row <- board]
+drawBoard board = sequence_ $ concat [putChar '\n':[drawCell cell | cell <- row ] | row <- rows board]
 
 drawCell :: Cell -> IO ()
 drawCell (Cell Opened (Numeric i)) = do
