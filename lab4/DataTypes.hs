@@ -32,7 +32,7 @@ cell :: Gen Cell
 cell = frequency [(1, return (Cell Hidden Mine)),
                   (2, return (Cell Hidden (Numeric 0)))]
 
--- an instance for generating Arbitrary Sudokus
+-- an instance for generating Arbitrary Boards
 instance Arbitrary Board where
   arbitrary = do
     grid <- vectorOf 18 (vectorOf 18 cell)
