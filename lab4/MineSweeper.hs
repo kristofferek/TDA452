@@ -21,6 +21,17 @@ implementation = Interface
 main :: IO ()
 main = runGame implementation
 
+-- New propery to check opening of a cell
+prop_openCell :: Board -> Coord -> Bool
+prop_openCell b (x,y) = if valueAtCoord b (x',y') == Mine
+                        then statusAtCoord (openSpace b (x',y')) (x',y') == Hidden
+                        else statusAtCoord (openSpace b (x',y')) (x',y') == Opened
+  where
+    x' = x `mod` 18
+    y' = y `mod` 18
+
+
+
 {-
 Calculate the amount of mines around all the blank cells
 -}
@@ -79,14 +90,6 @@ openSpace b c
     openUp b (x,y)          = openSpace (openRight b (x,y)) (x,y-1)
     openDown b (x,y)        = openSpace (openUp b (x,y)) (x,y+1)
     openSpace' b c          = openDown (openTile b c) c
-
-prop_openSpace :: Board -> Coord -> Bool
-prop_openTile b (x,y) = if valueAtCoord b (x',y') == Mine
-                        then statusAtCoord (openSpace b (x',y')) (x',y') == Hidden
-                        else statusAtCoord (openSpace b (x',y')) (x',y') == Opened
-  where
-    x' = x `mod` 18
-    y' = y `mod` 18
 
 {-
 Return true if the coord is inside the board
